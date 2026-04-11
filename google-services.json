@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "146035975275",
+    "project_id": "glowgoal-f8af1",
+    "storage_bucket": "glowgoal-f8af1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:146035975275:android:59c51d50361dd32e40fd2e",
+        "android_client_info": {
+          "package_name": "com.ayotomiwa.glowgoal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBijeTBKSjok8o_xV1lyMWBHuPNm9Fmic"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ayotomiwa.glowgoal"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
