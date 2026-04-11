@@ -56,6 +56,7 @@ export default function SignUpScreen() {
 
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'glowgoal',
+    preferLocalhost: true,
   });
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
@@ -64,6 +65,7 @@ export default function SignUpScreen() {
       androidClientId: '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
       iosClientId: '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
       redirectUri,
+      responseType: Platform.OS === 'web' ? 'id_token' : 'token',
       selectAccount: true,
     });
 
@@ -387,7 +389,9 @@ export default function SignUpScreen() {
               <View style={styles.socialSection}>
                 <Pressable
                   style={styles.socialButton}
-                  onPress={() => promptGoogleSignIn()}
+                  onPress={() => {
+  promptGoogleSignIn(Platform.OS === 'web' ? { showInRecents: true } : {});
+}}
                   disabled={anyLoading || !googleRequest}
                 >
                   {googleLoading ? (

@@ -51,7 +51,7 @@ export default function LoginScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'glowgoal' });
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'glowgoal', preferLocalhost: true, });
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
@@ -62,6 +62,7 @@ export default function LoginScreen() {
       iosClientId:
         '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
       redirectUri,
+      responseType: Platform.OS === 'web' ? 'id_token' : 'token',
     });
 
   useEffect(() => {
@@ -359,7 +360,9 @@ export default function LoginScreen() {
               <View style={styles.socialSection}>
                 <Pressable
                   style={styles.socialButton}
-                  onPress={() => promptGoogleSignIn()}
+                 onPress={() => {
+  promptGoogleSignIn(Platform.OS === 'web' ? { showInRecents: true } : {});
+}}
                   disabled={loading || googleLoading || !googleRequest}
                 >
                   {googleLoading ? (
