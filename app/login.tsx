@@ -61,8 +61,7 @@ export default function LoginScreen() {
         '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
       iosClientId:
         '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
-      redirectUri,
-      responseType: Platform.OS === 'web' ? 'id_token' : 'token',
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal-web.vercel.app' : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
     });
 
   useEffect(() => {
@@ -361,8 +360,15 @@ export default function LoginScreen() {
                 <Pressable
                   style={styles.socialButton}
                  onPress={() => {
-  promptGoogleSignIn(Platform.OS === 'web' ? { showInRecents: true } : {});
-}}
+                   if (Platform.OS === 'web') {
+                    
+                     promptGoogleSignIn({
+                       windowFeatures: undefined, 
+                     });
+                   } else {
+                     promptGoogleSignIn();
+                   }
+                 }}
                   disabled={loading || googleLoading || !googleRequest}
                 >
                   {googleLoading ? (
