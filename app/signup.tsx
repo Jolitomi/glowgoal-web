@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithCredential,
+  signInWithPopup,
   updateProfile,
 } from 'firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
@@ -43,6 +44,9 @@ export default function SignUpScreen() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Synchronized loading state to fix TypeScript error
+  const anyLoading = emailLoading || googleLoading;
+
   const float = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0.9)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -67,6 +71,30 @@ export default function SignUpScreen() {
       redirectUri: Platform.OS === 'web' ? 'https://glowgoal-web.vercel.app' : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
       selectAccount: true,
     });
+
+    const handleGoogleSignIn = async () => {
+  if (Platform.OS === 'web') {
+    setGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      // Use signInWithPopup for a better web experience
+      // If it still blocks, switch 'signInWithPopup' to 'signInWithRedirect'
+      await signInWithPopup(auth, provider);
+      // Your RootLayout's onAuthStateChanged will handle the redirect to /dashboard
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        Alert.alert('Popup Blocked', 'Please allow popups for this site to sign in.');
+      } else {
+        Alert.alert('Login Error', error.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  } else {
+    // Keep your existing Expo code for Android/iOS
+    promptGoogleSignIn();
+  }
+};
 
   useEffect(() => {
     Animated.loop(
@@ -243,8 +271,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const anyLoading = emailLoading || googleLoading;
-
   return (
     <LinearGradient colors={['#828C6A', '#A0AB89', '#CCBEB1']} style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -386,25 +412,8 @@ export default function SignUpScreen() {
               </View>
 
               <View style={styles.socialSection}>
-                <Pressable
-                  style={styles.socialButton}
-                 onPress={() => {
-  if (Platform.OS === 'web') {
-   
-    promptGoogleSignIn({
-      windowFeatures: undefined, 
-    });
-  } else {
-    promptGoogleSignIn();
-  }
-}}
-                  disabled={anyLoading || !googleRequest}
-                >
-                  {googleLoading ? (
-                    <ActivityIndicator color="#2F2A26" />
-                  ) : (
-                    <Text style={styles.socialText}>Continue with Google</Text>
-                  )}
+                <Pressable style={styles.socialButton} onPress={handleGoogleSignIn} disabled={anyLoading}>
+                  {googleLoading ? <ActivityIndicator color="#2F2A26" /> : <Text style={styles.socialText}>Continue with Google</Text>}
                 </Pressable>
               </View>
 

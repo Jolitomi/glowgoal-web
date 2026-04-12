@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   signInWithEmailAndPassword,
+  signInWithPopup,
 } from 'firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -39,6 +40,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+const anyLoading = loading || googleLoading;
 
   const float = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -52,6 +54,23 @@ export default function LoginScreen() {
   const jump = useRef(new Animated.Value(0)).current;
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'glowgoal', preferLocalhost: true, });
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    if (Platform.OS === 'web') {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+        // RootLayout will handle the move to /personality or /dashboard
+      } catch (error: any) {
+        Alert.alert('Google Error', error.message);
+      } finally {
+        setGoogleLoading(false);
+      }
+    } else {
+      promptGoogleSignIn();
+    }
+};
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
@@ -358,25 +377,16 @@ export default function LoginScreen() {
 
               <View style={styles.socialSection}>
                 <Pressable
-                  style={styles.socialButton}
-                 onPress={() => {
-                   if (Platform.OS === 'web') {
-                    
-                     promptGoogleSignIn({
-                       windowFeatures: undefined, 
-                     });
-                   } else {
-                     promptGoogleSignIn();
-                   }
-                 }}
-                  disabled={loading || googleLoading || !googleRequest}
-                >
-                  {googleLoading ? (
-                    <ActivityIndicator color="#2F2A26" />
-                  ) : (
-                    <Text style={styles.socialText}>Continue with Google</Text>
-                  )}
-                </Pressable>
+  style={styles.socialButton}
+  onPress={handleGoogleSignIn}
+  disabled={anyLoading}
+>
+  {googleLoading ? (
+    <ActivityIndicator color="#2F2A26" />
+  ) : (
+    <Text style={styles.socialText}>Continue with Google</Text>
+  )}
+</Pressable>
               </View>
 
               <View style={styles.footer}>
