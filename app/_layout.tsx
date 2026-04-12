@@ -16,15 +16,24 @@ export default function RootLayout() {
     // 2. Handle Authentication Routing
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        
-        router.replace('/dashboard'); 
+        // --- THE FIX ---
+        // Check if the account was created in the last 10 seconds
+        const creationTime = new Date(user.metadata.creationTime || 0).getTime();
+        const now = new Date().getTime();
+        const isNewUser = now - creationTime < 10000; // 10-second window
+
+        if (isNewUser) {
+          router.replace('/personality');
+        } else {
+          router.replace('/dashboard');
+        }
+        // ----------------
       } else {
-        // 
         router.replace('/');
       }
     });
 
-    return unsubscribe; 
+    return unsubscribe;
   }, []);
 
   return <Stack screenOptions={{ headerShown: false }} />;
