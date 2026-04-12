@@ -53,7 +53,6 @@ const anyLoading = loading || googleLoading;
 
   const jump = useRef(new Animated.Value(0)).current;
 
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'glowgoal', preferLocalhost: true, });
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -71,6 +70,9 @@ const anyLoading = loading || googleLoading;
       promptGoogleSignIn();
     }
 };
+const redirectUri = Platform.OS === 'web' 
+  ? 'https://glowgoal.com.ng/signup' 
+  : AuthSession.makeRedirectUri({ scheme: 'glowgoal' });
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
@@ -80,7 +82,7 @@ const anyLoading = loading || googleLoading;
         '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
       iosClientId:
         '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
-      redirectUri: Platform.OS === 'web' ? 'https://glowgoal-web.vercel.app' : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
     });
 
   useEffect(() => {
