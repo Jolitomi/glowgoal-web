@@ -28,6 +28,7 @@ import {
   useWindowDimensions
 } from 'react-native';
 import { auth } from '../lib/firebase';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -223,17 +224,35 @@ const redirectUri = Platform.OS === 'web'
       Alert.alert('Oops!', 'Please enter both email and password.');
       return;
     }
-
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const user = result.user;
+
+      if (user) {
+        // --- RE-CAPTURE NOTIFICATION TOKEN ---
+        try {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            
+            // Just update the existing user doc with the fresh token
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, { 
+              pushToken: token,
+              lastLogin: new Date() 
+            });
+          }
+        } catch (pushError) {
+          console.warn('Login successful, but push token update failed:', pushError);
+        }
+        // -------------------------------------
+      }
 
       triggerSuccessBurst();
       triggerVictoryJump();
-
-      setTimeout(() => {
-        router.replace('/dashboard');
-      }, 500);
+      setTimeout(() => router.replace('/dashboard'), 500);
     } catch (error: any) {
       Alert.alert('Login failed', 'Check your email/password and try again.');
     } finally {

@@ -29,6 +29,7 @@ import {
   useWindowDimensions
 } from 'react-native';
 import { auth } from '../lib/firebase';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -72,15 +73,46 @@ export default function SignUpScreen() {
       selectAccount: true,
     });
 
-    const handleGoogleSignIn = async () => {
+   const handleGoogleSignIn = async () => {
+  setGoogleLoading(true);
+
   if (Platform.OS === 'web') {
-    setGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      // Use signInWithPopup for a better web experience
-      // If it still blocks, switch 'signInWithPopup' to 'signInWithRedirect'
-      await signInWithPopup(auth, provider);
-      // Your RootLayout's onAuthStateChanged will handle the redirect to /dashboard
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      if (user) {
+        // --- NOTIFICATION TOKEN LOGIC ---
+        try {
+          // 1. Get the token (This triggers the VAPID/sw.js handshake)
+          const token = await registerForPushNotificationsAsync();
+          
+          if (token) {
+            // 2. Save/Update the token in the user's Firestore document
+            const { doc, updateDoc, setDoc, getDoc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+              await updateDoc(userRef, { pushToken: token });
+            } else {
+              // If it's a first-time Google sign-up, create the doc
+              await setDoc(userRef, {
+                email: user.email,
+                name: user.displayName,
+                pushToken: token,
+                createdAt: new Date(),
+              });
+            }
+          }
+        } catch (pushError) {
+          console.warn('Failed to save push token, but login was successful:', pushError);
+        }
+        // ---------------------------------
+      }
     } catch (error: any) {
       if (error.code === 'auth/popup-blocked') {
         Alert.alert('Popup Blocked', 'Please allow popups for this site to sign in.');
@@ -91,7 +123,6 @@ export default function SignUpScreen() {
       setGoogleLoading(false);
     }
   } else {
-    // Keep your existing Expo code for Android/iOS
     promptGoogleSignIn();
   }
 };
