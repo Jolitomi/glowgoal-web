@@ -222,14 +222,13 @@ export default function LoginScreen() {
       const { db } = await import('../lib/firebase');
       const userSnap = await getDoc(doc(db, 'users', user.uid));
 
-      // 5. Preserved 3-second Launch experience
       setTimeout(() => {
         if (!userSnap.exists()) {
           router.replace('/onboarding');
         } else {
           router.replace('/dashboard');
         }
-      }, 3000);
+      }, 4000);
 
     } catch (error) {
       console.error("Login finalization failed:", error);
