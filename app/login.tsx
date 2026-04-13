@@ -27,6 +27,7 @@ import {
   View,
   useWindowDimensions
 } from 'react-native';
+import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 
@@ -41,7 +42,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-const anyLoading = loading || googleLoading;
+  const anyLoading = loading || googleLoading;
 
   const float = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -54,26 +55,20 @@ const anyLoading = loading || googleLoading;
 
   const jump = useRef(new Animated.Value(0)).current;
 
-
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
       try {
         await signInWithPopup(auth, provider);
-        // RootLayout will handle the move to /personality or /dashboard
       } catch (error: any) {
         Alert.alert('Google Error', error.message);
-      } finally {
         setGoogleLoading(false);
       }
     } else {
       promptGoogleSignIn();
     }
-};
-const redirectUri = Platform.OS === 'web' 
-  ? 'https://glowgoal.com.ng/signup' 
-  : AuthSession.makeRedirectUri({ scheme: 'glowgoal' });
+  };
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
@@ -92,12 +87,12 @@ const redirectUri = Platform.OS === 'web'
         Animated.timing(float, {
           toValue: -14,
           duration: 2200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(float, {
           toValue: 0,
           duration: 2200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
@@ -107,12 +102,12 @@ const redirectUri = Platform.OS === 'web'
         Animated.timing(scale, {
           toValue: 1.07,
           duration: 1800,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(scale, {
           toValue: 1,
           duration: 1800,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
@@ -122,12 +117,12 @@ const redirectUri = Platform.OS === 'web'
         Animated.timing(rotate, {
           toValue: 1,
           duration: 2500,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(rotate, {
           toValue: -1,
           duration: 2500,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
@@ -137,12 +132,12 @@ const redirectUri = Platform.OS === 'web'
         Animated.timing(glow, {
           toValue: 1,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(glow, {
           toValue: 0.6,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     ).start();
@@ -167,17 +162,17 @@ const redirectUri = Platform.OS === 'web'
       Animated.timing(burstScale, {
         toValue: 1.9,
         duration: 650,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(burstOpacity, {
         toValue: 0,
         duration: 650,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(burstRotate, {
         toValue: 1,
         duration: 650,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
   };
@@ -189,15 +184,57 @@ const redirectUri = Platform.OS === 'web'
       Animated.timing(jump, {
         toValue: -42,
         duration: 220,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.spring(jump, {
         toValue: 0,
         friction: 4,
         tension: 120,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
+  };
+
+  // NEW: Unified completion flow to handle onboarding vs dashboard logic
+  const finalizeLogin = async (user: any) => {
+    try {
+      // 1. Priority Email Scheduling
+      await scheduleDailyReminders([], 'hype'); 
+
+      // 2. Background Push Token Update
+      registerForPushNotificationsAsync()
+        .then(async (token) => {
+          if (token) {
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, { pushToken: token, lastLogin: new Date() });
+          }
+        })
+        .catch(e => console.warn('Push registration skipped:', e));
+
+      // 3. Victory Animations
+      triggerSuccessBurst();
+      triggerVictoryJump();
+
+      // 4. Data-Driven Navigation Check
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('../lib/firebase');
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+
+      // 5. Preserved 3-second Launch experience
+      setTimeout(() => {
+        if (!userSnap.exists()) {
+          router.replace('/onboarding');
+        } else {
+          router.replace('/dashboard');
+        }
+      }, 3000);
+
+    } catch (error) {
+      console.error("Login finalization failed:", error);
+      router.replace('/dashboard'); // Fallback
+    }
   };
 
   useEffect(() => {
@@ -207,15 +244,11 @@ const redirectUri = Platform.OS === 'web'
 
       setGoogleLoading(true);
       signInWithCredential(auth, credential)
-        .then(() => {
-          triggerSuccessBurst();
-          triggerVictoryJump();
-          setTimeout(() => {
-            router.replace('/dashboard');
-          }, 500);
-        })
-        .catch((err) => Alert.alert('Google Login Error', err.message))
-        .finally(() => setGoogleLoading(false));
+        .then((result) => finalizeLogin(result.user))
+        .catch((err) => {
+          Alert.alert('Google Login Error', err.message);
+          setGoogleLoading(false);
+        });
     }
   }, [googleResponse]);
 
@@ -227,35 +260,11 @@ const redirectUri = Platform.OS === 'web'
     try {
       setLoading(true);
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const user = result.user;
-
-      if (user) {
-        // --- RE-CAPTURE NOTIFICATION TOKEN ---
-        try {
-          const token = await registerForPushNotificationsAsync();
-          if (token) {
-            const { doc, updateDoc } = await import('firebase/firestore');
-            const { db } = await import('../lib/firebase');
-            
-            // Just update the existing user doc with the fresh token
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, { 
-              pushToken: token,
-              lastLogin: new Date() 
-            });
-          }
-        } catch (pushError) {
-          console.warn('Login successful, but push token update failed:', pushError);
-        }
-        // -------------------------------------
+      if (result.user) {
+        await finalizeLogin(result.user);
       }
-
-      triggerSuccessBurst();
-      triggerVictoryJump();
-      setTimeout(() => router.replace('/dashboard'), 500);
     } catch (error: any) {
       Alert.alert('Login failed', 'Check your email/password and try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -283,7 +292,6 @@ const redirectUri = Platform.OS === 'web'
                     },
                   ]}
                 />
-
                 <Animated.View
                   pointerEvents="none"
                   style={[
@@ -297,7 +305,6 @@ const redirectUri = Platform.OS === 'web'
                     },
                   ]}
                 />
-
                 <Animated.View
                   pointerEvents="none"
                   style={[
@@ -308,7 +315,6 @@ const redirectUri = Platform.OS === 'web'
                     },
                   ]}
                 />
-
                 <Animated.View
                   pointerEvents="none"
                   style={[
@@ -319,7 +325,6 @@ const redirectUri = Platform.OS === 'web'
                     },
                   ]}
                 />
-
                 <Animated.Image
                   source={require('../assets/images/star.png')}
                   resizeMode="contain"
@@ -349,7 +354,6 @@ const redirectUri = Platform.OS === 'web'
                   value={email}
                   onChangeText={setEmail}
                 />
-
                 <View style={styles.passwordWrapper}>
                   <TextInput
                     placeholder="Password"
@@ -398,16 +402,16 @@ const redirectUri = Platform.OS === 'web'
 
               <View style={styles.socialSection}>
                 <Pressable
-  style={styles.socialButton}
-  onPress={handleGoogleSignIn}
-  disabled={anyLoading}
->
-  {googleLoading ? (
-    <ActivityIndicator color="#2F2A26" />
-  ) : (
-    <Text style={styles.socialText}>Continue with Google</Text>
-  )}
-</Pressable>
+                  style={styles.socialButton}
+                  onPress={handleGoogleSignIn}
+                  disabled={anyLoading}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator color="#2F2A26" />
+                  ) : (
+                    <Text style={styles.socialText}>Continue with Google</Text>
+                  )}
+                </Pressable>
               </View>
 
               <View style={styles.footer}>

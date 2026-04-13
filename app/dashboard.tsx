@@ -38,11 +38,7 @@ import { resetMissedDays } from '../lib/user-behavior';
 
 type NavTab = 'home' | 'goals' | 'progress' | 'profile';
 
-/**
- * BACKGROUND SYNC LOGIC
- * This ensures the user's email is stored in Firestore so the 
- * backend cron scheduler can send emails even when the app is closed.
- */
+
 const syncUserEmailToFirestore = async (user: User | null) => {
   if (user && user.email) {
     try {

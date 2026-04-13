@@ -28,6 +28,7 @@ import {
   View,
   useWindowDimensions
 } from 'react-native';
+import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 
@@ -44,8 +45,6 @@ export default function SignUpScreen() {
 
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  // Synchronized loading state to fix TypeScript error
   const anyLoading = emailLoading || googleLoading;
 
   const float = useRef(new Animated.Value(0)).current;
@@ -59,11 +58,6 @@ export default function SignUpScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme: 'glowgoal',
-    preferLocalhost: true,
-  });
-
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
       webClientId: '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
@@ -73,118 +67,93 @@ export default function SignUpScreen() {
       selectAccount: true,
     });
 
-   const handleGoogleSignIn = async () => {
-  setGoogleLoading(true);
-
-  if (Platform.OS === 'web') {
-    const provider = new GoogleAuthProvider();
+  // Unified completion flow for Sign Up
+  const finalizeSignUp = async (user: any) => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      // 1. Priority Email Scheduling
+      await scheduleDailyReminders([], 'hype');
 
-      if (user) {
-        // --- NOTIFICATION TOKEN LOGIC ---
-        try {
-          // 1. Get the token (This triggers the VAPID/sw.js handshake)
-          const token = await registerForPushNotificationsAsync();
+      // 2. Background Push Token Update & Firestore Setup
+      registerForPushNotificationsAsync()
+        .then(async (token) => {
+          const { doc, setDoc, getDoc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('../lib/firebase');
           
-          if (token) {
-            // 2. Save/Update the token in the user's Firestore document
-            const { doc, updateDoc, setDoc, getDoc } = await import('firebase/firestore');
-            const { db } = await import('../lib/firebase');
-            
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
 
-            if (userSnap.exists()) {
-              await updateDoc(userRef, { pushToken: token });
-            } else {
-              // If it's a first-time Google sign-up, create the doc
-              await setDoc(userRef, {
-                email: user.email,
-                name: user.displayName,
-                pushToken: token,
-                createdAt: new Date(),
-              });
-            }
+          const userData = {
+            email: user.email,
+            name: user.displayName || name,
+            pushToken: token || null,
+            lastLogin: new Date(),
+          };
+
+          if (userSnap.exists()) {
+            await updateDoc(userRef, userData);
+          } else {
+            await setDoc(userRef, { ...userData, createdAt: new Date() });
           }
-        } catch (pushError) {
-          console.warn('Failed to save push token, but login was successful:', pushError);
-        }
-        // ---------------------------------
-      }
-    } catch (error: any) {
-      if (error.code === 'auth/popup-blocked') {
-        Alert.alert('Popup Blocked', 'Please allow popups for this site to sign in.');
-      } else {
-        Alert.alert('Login Error', error.message);
-      }
-    } finally {
-      setGoogleLoading(false);
+        })
+        .catch(e => console.warn('Push registration skipped:', e));
+
+      // 3. Victory Animations
+      triggerSuccessBurst();
+      triggerVictoryJump();
+
+      // 4. Navigation after the 3-second aesthetic window
+      setTimeout(() => {
+        router.replace('/personality');
+      }, 3000);
+
+    } catch (error) {
+      console.error("Sign up finalization failed:", error);
+      router.replace('/personality');
     }
-  } else {
-    promptGoogleSignIn();
-  }
-};
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    if (Platform.OS === 'web') {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) await finalizeSignUp(result.user);
+      } catch (error: any) {
+        Alert.alert('Login Error', error.message);
+        setGoogleLoading(false);
+      }
+    } else {
+      promptGoogleSignIn();
+    }
+  };
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(float, {
-          toValue: -12,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(float, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(float, { toValue: -12, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(float, { toValue: 0, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.05,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
+        Animated.timing(scale, { toValue: 1.05, duration: 1800, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(scale, { toValue: 1, duration: 1800, useNativeDriver: Platform.OS !== 'web' }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(rotate, {
-          toValue: 1,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rotate, {
-          toValue: -1,
-          duration: 2500,
-          useNativeDriver: true,
-        }),
+        Animated.timing(rotate, { toValue: 1, duration: 2500, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(rotate, { toValue: -1, duration: 2500, useNativeDriver: Platform.OS !== 'web' }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glow, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glow, {
-          toValue: 0.7,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(glow, { toValue: 1, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(glow, { toValue: 0.7, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
       ])
     ).start();
   }, [float, glow, rotate, scale]);
@@ -203,76 +172,34 @@ export default function SignUpScreen() {
     burstScale.setValue(0);
     burstOpacity.setValue(0.9);
     burstRotate.setValue(0);
-
     Animated.parallel([
-      Animated.timing(burstScale, {
-        toValue: 1.6,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(burstOpacity, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(burstRotate, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
+      Animated.timing(burstScale, { toValue: 1.6, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(burstOpacity, { toValue: 0, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(burstRotate, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
   };
 
   const triggerVictoryJump = () => {
     jump.setValue(0);
-
     Animated.sequence([
-      Animated.timing(jump, {
-        toValue: -30,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.spring(jump, {
-        toValue: 0,
-        friction: 5,
-        tension: 100,
-        useNativeDriver: true,
-      }),
+      Animated.timing(jump, { toValue: -30, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.spring(jump, { toValue: 0, friction: 5, tension: 100, useNativeDriver: Platform.OS !== 'web' }),
     ]).start();
   };
 
   useEffect(() => {
-    const signIn = async () => {
-      if (googleResponse?.type !== 'success') return;
-
-      const idToken =
-        googleResponse.authentication?.idToken ||
-        googleResponse.params?.id_token;
-
-      if (!idToken) {
-        Alert.alert('Google Sign-In Error', 'No ID token returned.');
-        return;
-      }
-
-      try {
-        setGoogleLoading(true);
-        const credential = GoogleAuthProvider.credential(idToken);
-        await signInWithCredential(auth, credential);
-
-        triggerSuccessBurst();
-        triggerVictoryJump();
-
-        setTimeout(() => {
-          router.replace('/personality');
-        }, 500);
-      } catch (err: any) {
-        Alert.alert('Firebase Error', err.message || 'Google sign-in failed');
-      } finally {
-        setGoogleLoading(false);
-      }
-    };
-
-    signIn();
+    if (googleResponse?.type === 'success') {
+      const idToken = googleResponse.authentication?.idToken || googleResponse.params?.id_token;
+      if (!idToken) return;
+      setGoogleLoading(true);
+      const credential = GoogleAuthProvider.credential(idToken);
+      signInWithCredential(auth, credential)
+        .then((result) => finalizeSignUp(result.user))
+        .catch((err) => {
+          Alert.alert('Firebase Error', err.message);
+          setGoogleLoading(false);
+        });
+    }
   }, [googleResponse]);
 
   const handleEmailSignUp = async () => {
@@ -280,24 +207,15 @@ export default function SignUpScreen() {
       Alert.alert('Hold up!', 'I need a name, valid email, and 6+ chars for password.');
       return;
     }
-
     try {
       setEmailLoading(true);
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
-
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { displayName: name.trim() });
+      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      if (result.user) {
+        await updateProfile(result.user, { displayName: name.trim() });
+        await finalizeSignUp(result.user);
       }
-
-      triggerSuccessBurst();
-      triggerVictoryJump();
-
-      setTimeout(() => {
-        router.replace('/personality');
-      }, 500);
     } catch (error: any) {
       Alert.alert('Sign up failed', error.message);
-    } finally {
       setEmailLoading(false);
     }
   };
@@ -306,80 +224,17 @@ export default function SignUpScreen() {
     <LinearGradient colors={['#828C6A', '#A0AB89', '#CCBEB1']} style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.flex}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="always"
-          >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
             <View style={[styles.responsiveWrapper, isDesktop && styles.desktopCard]}>
               <View style={styles.buddyHeader}>
                 <View style={styles.mascotContainer}>
-                  <Animated.View
-                    style={[
-                      styles.glowEffect,
-                      {
-                        opacity: glow,
-                        transform: [{ scale: glow }],
-                      },
-                    ]}
-                  />
-
-                  <Animated.View
-                    pointerEvents="none"
-                    style={[
-                      styles.burstRing,
-                      {
-                        opacity: burstOpacity,
-                        transform: [
-                          { scale: burstScale },
-                          { rotate: burstRotateInterpolate },
-                        ],
-                      },
-                    ]}
-                  />
-
-                  <Animated.View
-                    pointerEvents="none"
-                    style={[
-                      styles.burstSparkHorizontal,
-                      {
-                        opacity: burstOpacity,
-                        transform: [{ scale: burstScale }],
-                      },
-                    ]}
-                  />
-
-                  <Animated.View
-                    pointerEvents="none"
-                    style={[
-                      styles.burstSparkVertical,
-                      {
-                        opacity: burstOpacity,
-                        transform: [{ scale: burstScale }],
-                      },
-                    ]}
-                  />
-
-                  <Animated.Image
-                    source={require('../assets/images/star.png')}
-                    resizeMode="contain"
-                    style={[
-                      styles.logoImage,
-                      {
-                        transform: [
-                          { translateY: Animated.add(float, jump) },
-                          { scale },
-                          { rotate: rotateInterpolate },
-                        ],
-                      },
-                    ]}
-                  />
+                  <Animated.View style={[styles.glowEffect, { opacity: glow, transform: [{ scale: glow }] }]} />
+                  <Animated.View pointerEvents="none" style={[styles.burstRing, { opacity: burstOpacity, transform: [{ scale: burstScale }, { rotate: burstRotateInterpolate }] }]} />
+                  <Animated.View pointerEvents="none" style={[styles.burstSparkHorizontal, { opacity: burstOpacity, transform: [{ scale: burstScale }] }]} />
+                  <Animated.View pointerEvents="none" style={[styles.burstSparkVertical, { opacity: burstOpacity, transform: [{ scale: burstScale }] }]} />
+                  <Animated.Image source={require('../assets/images/star.png')} resizeMode="contain" style={[styles.logoImage, { transform: [{ translateY: Animated.add(float, jump) }, { scale }, { rotate: rotateInterpolate }] }]} />
                 </View>
-
                 <View style={styles.speechBubble}>
                   <Text style={styles.bubbleText}>You don't need motivation. You need me</Text>
                 </View>
@@ -388,56 +243,18 @@ export default function SignUpScreen() {
               <Text style={styles.title}>Let's get you started</Text>
 
               <View style={styles.formCard}>
-                <TextInput
-                  placeholder="Your name"
-                  placeholderTextColor="#666"
-                  style={styles.input}
-                  value={name}
-                  onChangeText={setName}
-                />
-
-                <TextInput
-                  placeholder="Email"
-                  placeholderTextColor="#666"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                />
-
+                <TextInput placeholder="Your name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
+                <TextInput placeholder="Email" placeholderTextColor="#666" autoCapitalize="none" keyboardType="email-address" style={styles.input} value={email} onChangeText={setEmail} />
                 <View style={styles.passwordWrapper}>
-                  <TextInput
-                    placeholder="Password"
-                    placeholderTextColor="#666"
-                    style={styles.passwordInput}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                  />
+                  <TextInput placeholder="Password" placeholderTextColor="#666" style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} />
                   <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-                    <Ionicons
-                      name={showPassword ? 'eye-off' : 'eye'}
-                      size={22}
-                      color="#828C6A"
-                    />
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#828C6A" />
                   </Pressable>
                 </View>
 
-                <Pressable
-                  onPress={handleEmailSignUp}
-                  disabled={anyLoading}
-                  style={({ pressed }) => [
-                    styles.mainButtonWrapper,
-                    { opacity: pressed || anyLoading ? 0.7 : 1 },
-                  ]}
-                >
+                <Pressable onPress={handleEmailSignUp} disabled={anyLoading} style={({ pressed }) => [styles.mainButtonWrapper, { opacity: pressed || anyLoading ? 0.7 : 1 }]}>
                   <LinearGradient colors={['#FFD580', '#FFB347']} style={styles.mainButtonGradient}>
-                    {emailLoading ? (
-                      <ActivityIndicator color="#3B3128" />
-                    ) : (
-                      <Text style={styles.buttonText}>Get My Buddy</Text>
-                    )}
+                    {emailLoading ? <ActivityIndicator color="#3B3128" /> : <Text style={styles.buttonText}>Get My Buddy</Text>}
                   </LinearGradient>
                 </Pressable>
               </View>
@@ -466,178 +283,31 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
   flex: { flex: 1 },
-
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-
-  responsiveWrapper: {
-    width: '100%',
-    maxWidth: 420,
-    alignItems: 'center',
-  },
-
-  desktopCard: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    padding: 30,
-    borderRadius: 40,
-  },
-
-  buddyHeader: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-
-  mascotContainer: {
-    width: 160,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  glowEffect: {
-    position: 'absolute',
-    width: 130,
-    height: 130,
-    backgroundColor: '#FFE096',
-    borderRadius: 65,
-  },
-
-  burstRing: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: 'rgba(255,240,190,0.9)',
-  },
-
-  burstSparkHorizontal: {
-    position: 'absolute',
-    width: 150,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,244,210,0.9)',
-  },
-
-  burstSparkVertical: {
-    position: 'absolute',
-    width: 8,
-    height: 150,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,244,210,0.9)',
-  },
-
-  logoImage: {
-    width: 110,
-    height: 110,
-  },
-
-  speechBubble: {
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 15,
-    marginTop: 10,
-  },
-
-  bubbleText: {
-    fontWeight: '700',
-    color: '#3A3128',
-    fontSize: 12,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#FFF',
-    marginBottom: 20,
-  },
-
-  formCard: {
-    width: '100%',
-    gap: 12,
-  },
-
-  input: {
-    backgroundColor: '#FFF',
-    height: 55,
-    borderRadius: 18,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#000',
-  },
-
-  passwordWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 18,
-    height: 55,
-    overflow: 'hidden',
-  },
-
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    color: '#000',
-  },
-
-  eyeButton: {
-    paddingRight: 15,
-  },
-
-  mainButtonWrapper: {
-    width: '100%',
-    marginTop: 10,
-  },
-
-  mainButtonGradient: {
-    height: 55,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  buttonText: {
-    fontWeight: '800',
-    fontSize: 18,
-    color: '#3B3128',
-  },
-
-  socialSection: {
-    width: '100%',
-    marginTop: 15,
-  },
-
-  socialButton: {
-    width: '100%',
-    height: 55,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  socialText: {
-    fontWeight: '700',
-    color: '#2F2A26',
-  },
-
-  footer: {
-    flexDirection: 'row',
-    marginTop: 25,
-  },
-
-  footerText: {
-    color: '#3A3128',
-  },
-
-  loginLink: {
-    fontWeight: '800',
-    color: '#4F5A3E',
-  },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  responsiveWrapper: { width: '100%', maxWidth: 420, alignItems: 'center' },
+  desktopCard: { backgroundColor: 'rgba(255,255,255,0.15)', padding: 30, borderRadius: 40 },
+  buddyHeader: { alignItems: 'center', marginBottom: 30 },
+  mascotContainer: { width: 160, height: 160, justifyContent: 'center', alignItems: 'center' },
+  glowEffect: { position: 'absolute', width: 130, height: 130, backgroundColor: '#FFE096', borderRadius: 65 },
+  burstRing: { position: 'absolute', width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: 'rgba(255,240,190,0.9)' },
+  burstSparkHorizontal: { position: 'absolute', width: 150, height: 8, borderRadius: 999, backgroundColor: 'rgba(255,244,210,0.9)' },
+  burstSparkVertical: { position: 'absolute', width: 8, height: 150, borderRadius: 999, backgroundColor: 'rgba(255,244,210,0.9)' },
+  logoImage: { width: 110, height: 110 },
+  speechBubble: { backgroundColor: 'white', padding: 10, borderRadius: 15, marginTop: 10 },
+  bubbleText: { fontWeight: '700', color: '#3A3128', fontSize: 12 },
+  title: { fontSize: 28, fontWeight: '900', color: '#FFF', marginBottom: 20 },
+  formCard: { width: '100%', gap: 12 },
+  input: { backgroundColor: '#FFF', height: 55, borderRadius: 18, paddingHorizontal: 20, fontSize: 16, color: '#000' },
+  passwordWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 18, height: 55, overflow: 'hidden' },
+  passwordInput: { flex: 1, paddingHorizontal: 20, fontSize: 16, color: '#000' },
+  eyeButton: { paddingRight: 15 },
+  mainButtonWrapper: { width: '100%', marginTop: 10 },
+  mainButtonGradient: { height: 55, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  buttonText: { fontWeight: '800', fontSize: 18, color: '#3B3128' },
+  socialSection: { width: '100%', marginTop: 15 },
+  socialButton: { width: '100%', height: 55, backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  socialText: { fontWeight: '700', color: '#2F2A26' },
+  footer: { flexDirection: 'row', marginTop: 25 },
+  footerText: { color: '#3A3128' },
+  loginLink: { fontWeight: '800', color: '#4F5A3E' },
 });

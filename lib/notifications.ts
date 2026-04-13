@@ -95,6 +95,7 @@ export async function scheduleLocalNotification(params: {
   secondsFromNow: number;
   data?: Record<string, unknown>;
 }) {
+  if (Platform.OS === 'web') return; // Shield for Web
   return Notifications.scheduleNotificationAsync({
     content: {
       title: params.title,
@@ -116,6 +117,7 @@ export async function scheduleDailyRepeatingNotification(params: {
   minute?: number;
   data?: Record<string, unknown>;
 }) {
+  if (Platform.OS === 'web') return; // Shield for Web
   return Notifications.scheduleNotificationAsync({
     content: {
       title: params.title,
@@ -133,18 +135,21 @@ export async function scheduleDailyRepeatingNotification(params: {
 
 // RESTORED: Cancellation Logic
 export async function cancelNotificationsByGoal(goalId: string) {
+  if (Platform.OS === 'web') return; // Shield for Web
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const matching = scheduled.filter((item) => item.content.data?.goalId === goalId);
   await Promise.all(matching.map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
 }
 
 export async function cancelNotificationsByType(type: string) {
+  if (Platform.OS === 'web') return; // Shield for Web
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const matching = scheduled.filter((item) => item.content.data?.type === type);
   await Promise.all(matching.map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
 }
 
 export async function cancelDailyReminderNotifications() {
+  if (Platform.OS === 'web') return; // Shield for Web
   await Promise.all([
     cancelNotificationsByType('morning_check'),
     cancelNotificationsByType('afternoon_nudge'),
@@ -153,6 +158,7 @@ export async function cancelDailyReminderNotifications() {
 }
 
 export async function cancelGlowGoalNotifications() {
+  if (Platform.OS === 'web') return; // Shield for Web
   const glowGoalTypes = ['morning_check', 'afternoon_nudge', 'evening_nudge', 'goal_updated', 'lock_in', 'deadline_close', 'deadline_today', 'overdue'];
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const matching = scheduled.filter((item) => {
@@ -163,6 +169,7 @@ export async function cancelGlowGoalNotifications() {
 }
 
 export async function cancelAllScheduledNotifications() {
+  if (Platform.OS === 'web') return; // Shield for Web
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
