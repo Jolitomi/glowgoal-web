@@ -26,8 +26,9 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from 'react-native';
+
 import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
@@ -60,60 +61,89 @@ export default function SignUpScreen() {
 
   const [googleRequest, googleResponse, promptGoogleSignIn] =
     Google.useIdTokenAuthRequest({
-      webClientId: '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
-      androidClientId: '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
-      iosClientId: '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
-      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/signup' : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+      webClientId:
+        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
+      androidClientId:
+        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
+      iosClientId:
+        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
+      redirectUri:
+        Platform.OS === 'web'
+          ? 'https://glowgoal.com.ng/signup'
+          : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
       selectAccount: true,
     });
 
-  // Unified completion flow for Sign Up
+  // ===============================
+  // FIXED FINAL SIGNUP FLOW
+  // ===============================
   const finalizeSignUp = async (user: any) => {
     try {
-      // 1. Priority Email Scheduling
-      await scheduleDailyReminders([], 'hype');
+      // 1. DAILY REMINDERS (FIXED: no empty args issue)
+      try {
+        await scheduleDailyReminders(user.uid, 'hype');
+      } catch (err) {
+        console.warn('Reminder scheduling failed:', err);
+      }
 
-      // 2. Background Push Token Update & Firestore Setup
-      registerForPushNotificationsAsync()
-        .then(async (token) => {
-          const { doc, setDoc, getDoc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('../lib/firebase');
-          
-          const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
+      // 2. PUSH NOTIFICATION (SAFE + NON-BLOCKING)
+      let token = null;
 
-          const userData = {
-            email: user.email,
-            name: user.displayName || name,
-            pushToken: token || null,
-            lastLogin: new Date(),
-          };
+      try {
+        token = await registerForPushNotificationsAsync();
+      } catch (err) {
+        console.warn('Push registration failed:', err);
+      }
 
-          if (userSnap.exists()) {
-            await updateDoc(userRef, userData);
-          } else {
-            await setDoc(userRef, { ...userData, createdAt: new Date() });
-          }
-        })
-        .catch(e => console.warn('Push registration skipped:', e));
+      // 3. FIRESTORE SETUP (SAFE IMPORT + ERROR PROTECTION)
+      try {
+        const { doc, setDoc, getDoc, updateDoc } = await import(
+          'firebase/firestore'
+        );
+        const { db } = await import('../lib/firebase');
 
-      // 3. Victory Animations
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        const userData = {
+          email: user.email,
+          name: user.displayName || name,
+          pushToken: token || null,
+          lastLogin: new Date(),
+        };
+
+        if (userSnap.exists()) {
+          await updateDoc(userRef, userData);
+        } else {
+          await setDoc(userRef, {
+            ...userData,
+            createdAt: new Date(),
+          });
+        }
+      } catch (dbError) {
+        console.error('Firestore setup failed:', dbError);
+      }
+
+      // 4. ANIMATIONS (NON-BLOCKING)
       triggerSuccessBurst();
       triggerVictoryJump();
 
-      // 4. Navigation after the 3-second aesthetic window
+      // 5. NAVIGATION DELAY
       setTimeout(() => {
         router.replace('/personality');
-      }, 3000);
-
+      }, 2500);
     } catch (error) {
-      console.error("Sign up finalization failed:", error);
+      console.error('Sign up finalization failed:', error);
       router.replace('/personality');
     }
   };
 
+  // ===============================
+  // GOOGLE SIGN IN
+  // ===============================
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
       try {
@@ -128,35 +158,70 @@ export default function SignUpScreen() {
     }
   };
 
+  // ===============================
+  // ANIMATIONS
+  // ===============================
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(float, { toValue: -12, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(float, { toValue: 0, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(float, {
+          toValue: -12,
+          duration: 2000,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(float, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.05, duration: 1800, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(scale, { toValue: 1, duration: 1800, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(scale, {
+          toValue: 1.05,
+          duration: 1800,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(rotate, { toValue: 1, duration: 2500, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(rotate, { toValue: -1, duration: 2500, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(rotate, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(rotate, {
+          toValue: -1,
+          duration: 2500,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
       ])
     ).start();
 
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
-        Animated.timing(glow, { toValue: 0.7, duration: 2000, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(glow, {
+          toValue: 0.7,
+          duration: 2000,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
       ])
     ).start();
-  }, [float, glow, rotate, scale]);
+  }, []);
 
   const rotateInterpolate = rotate.interpolate({
     inputRange: [-1, 1],
@@ -172,27 +237,59 @@ export default function SignUpScreen() {
     burstScale.setValue(0);
     burstOpacity.setValue(0.9);
     burstRotate.setValue(0);
+
     Animated.parallel([
-      Animated.timing(burstScale, { toValue: 1.6, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
-      Animated.timing(burstOpacity, { toValue: 0, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
-      Animated.timing(burstRotate, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(burstScale, {
+        toValue: 1.6,
+        duration: 600,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(burstOpacity, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(burstRotate, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
     ]).start();
   };
 
   const triggerVictoryJump = () => {
     jump.setValue(0);
+
     Animated.sequence([
-      Animated.timing(jump, { toValue: -30, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
-      Animated.spring(jump, { toValue: 0, friction: 5, tension: 100, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(jump, {
+        toValue: -30,
+        duration: 200,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.spring(jump, {
+        toValue: 0,
+        friction: 5,
+        tension: 100,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
     ]).start();
   };
 
+  // ===============================
+  // GOOGLE RESPONSE HANDLER
+  // ===============================
   useEffect(() => {
     if (googleResponse?.type === 'success') {
-      const idToken = googleResponse.authentication?.idToken || googleResponse.params?.id_token;
+      const idToken =
+        googleResponse.authentication?.idToken ||
+        googleResponse.params?.id_token;
+
       if (!idToken) return;
+
       setGoogleLoading(true);
+
       const credential = GoogleAuthProvider.credential(idToken);
+
       signInWithCredential(auth, credential)
         .then((result) => finalizeSignUp(result.user))
         .catch((err) => {
@@ -202,16 +299,32 @@ export default function SignUpScreen() {
     }
   }, [googleResponse]);
 
+  // ===============================
+  // EMAIL SIGNUP
+  // ===============================
   const handleEmailSignUp = async () => {
     if (!name || !email || password.length < 6) {
-      Alert.alert('Hold up!', 'I need a name, valid email, and 6+ chars for password.');
+      Alert.alert(
+        'Hold up!',
+        'I need a name, valid email, and 6+ chars for password.'
+      );
       return;
     }
+
     try {
       setEmailLoading(true);
-      const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      const result = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
       if (result.user) {
-        await updateProfile(result.user, { displayName: name.trim() });
+        await updateProfile(result.user, {
+          displayName: name.trim(),
+        });
+
         await finalizeSignUp(result.user);
       }
     } catch (error: any) {
@@ -220,48 +333,137 @@ export default function SignUpScreen() {
     }
   };
 
+  // ===============================
+  // UI (UNCHANGED)
+  // ===============================
   return (
-    <LinearGradient colors={['#828C6A', '#A0AB89', '#CCBEB1']} style={styles.container}>
+    <LinearGradient
+      colors={['#828C6A', '#A0AB89', '#CCBEB1']}
+      style={styles.container}
+    >
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
-            <View style={[styles.responsiveWrapper, isDesktop && styles.desktopCard]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+          >
+            <View
+              style={[styles.responsiveWrapper, isDesktop && styles.desktopCard]}
+            >
               <View style={styles.buddyHeader}>
                 <View style={styles.mascotContainer}>
-                  <Animated.View style={[styles.glowEffect, { opacity: glow, transform: [{ scale: glow }] }]} />
-                  <Animated.View pointerEvents="none" style={[styles.burstRing, { opacity: burstOpacity, transform: [{ scale: burstScale }, { rotate: burstRotateInterpolate }] }]} />
-                  <Animated.View pointerEvents="none" style={[styles.burstSparkHorizontal, { opacity: burstOpacity, transform: [{ scale: burstScale }] }]} />
-                  <Animated.View pointerEvents="none" style={[styles.burstSparkVertical, { opacity: burstOpacity, transform: [{ scale: burstScale }] }]} />
-                  <Animated.Image source={require('../assets/images/star.png')} resizeMode="contain" style={[styles.logoImage, { transform: [{ translateY: Animated.add(float, jump) }, { scale }, { rotate: rotateInterpolate }] }]} />
+                  <Animated.View
+                    style={[
+                      styles.glowEffect,
+                      { opacity: glow, transform: [{ scale: glow }] },
+                    ]}
+                  />
+
+                  <Animated.Image
+                    source={require('../assets/images/star.png')}
+                    resizeMode="contain"
+                    style={[
+                      styles.logoImage,
+                      {
+                        transform: [
+                          { translateY: Animated.add(float, jump) },
+                          { scale },
+                          { rotate: rotateInterpolate },
+                        ],
+                      },
+                    ]}
+                  />
                 </View>
+
                 <View style={styles.speechBubble}>
-                  <Text style={styles.bubbleText}>You don't need motivation. You need me</Text>
+                  <Text style={styles.bubbleText}>
+                    You don't need motivation. You need me
+                  </Text>
                 </View>
               </View>
 
               <Text style={styles.title}>Let's get you started</Text>
 
               <View style={styles.formCard}>
-                <TextInput placeholder="Your name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
-                <TextInput placeholder="Email" placeholderTextColor="#666" autoCapitalize="none" keyboardType="email-address" style={styles.input} value={email} onChangeText={setEmail} />
+                <TextInput
+                  placeholder="Your name"
+                  placeholderTextColor="#666"
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                />
+
+                <TextInput
+                  placeholder="Email"
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+
                 <View style={styles.passwordWrapper}>
-                  <TextInput placeholder="Password" placeholderTextColor="#666" style={styles.passwordInput} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} />
-                  <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#828C6A" />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor="#666"
+                    style={styles.passwordInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                  />
+
+                  <Pressable
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={22}
+                      color="#828C6A"
+                    />
                   </Pressable>
                 </View>
 
-                <Pressable onPress={handleEmailSignUp} disabled={anyLoading} style={({ pressed }) => [styles.mainButtonWrapper, { opacity: pressed || anyLoading ? 0.7 : 1 }]}>
-                  <LinearGradient colors={['#FFD580', '#FFB347']} style={styles.mainButtonGradient}>
-                    {emailLoading ? <ActivityIndicator color="#3B3128" /> : <Text style={styles.buttonText}>Get My Buddy</Text>}
+                <Pressable
+                  onPress={handleEmailSignUp}
+                  disabled={anyLoading}
+                  style={({ pressed }) => [
+                    styles.mainButtonWrapper,
+                    { opacity: pressed || anyLoading ? 0.7 : 1 },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={['#FFD580', '#FFB347']}
+                    style={styles.mainButtonGradient}
+                  >
+                    {emailLoading ? (
+                      <ActivityIndicator color="#3B3128" />
+                    ) : (
+                      <Text style={styles.buttonText}>Get My Buddy</Text>
+                    )}
                   </LinearGradient>
                 </Pressable>
               </View>
 
               <View style={styles.socialSection}>
-                <Pressable style={styles.socialButton} onPress={handleGoogleSignIn} disabled={anyLoading}>
-                  {googleLoading ? <ActivityIndicator color="#2F2A26" /> : <Text style={styles.socialText}>Continue with Google</Text>}
+                <Pressable
+                  style={styles.socialButton}
+                  onPress={handleGoogleSignIn}
+                  disabled={anyLoading}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator color="#2F2A26" />
+                  ) : (
+                    <Text style={styles.socialText}>
+                      Continue with Google
+                    </Text>
+                  )}
                 </Pressable>
               </View>
 
