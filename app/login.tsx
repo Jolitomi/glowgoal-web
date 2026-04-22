@@ -55,12 +55,91 @@ export default function LoginScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
+  // ===============================
+  // GOOGLE AUTH REQUEST HOOK
+  // ===============================
+  const [googleRequest, googleResponse, promptGoogleSignIn] =
+    Google.useIdTokenAuthRequest({
+      webClientId:
+        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
+      androidClientId:
+        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
+      iosClientId:
+        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c',
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+    });
+
+  // ===============================
+  // FIXED FINAL LOGIN FLOW
+  // ===============================
+  const finalizeLogin = async (user: any) => {
+    try {
+      // 1. Reminders (safe + non-blocking)
+      try {
+        await scheduleDailyReminders(user.uid, 'hype');
+      } catch (err) {
+        console.warn('Reminder scheduling failed:', err);
+      }
+
+      // 2. Push token (fully safe)
+      try {
+        const token = await registerForPushNotificationsAsync();
+
+        if (token) {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('../lib/firebase');
+
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            pushToken: token,
+            lastLogin: new Date(),
+          });
+        }
+      } catch (err) {
+        console.warn('Push registration skipped:', err);
+      }
+
+      // 3. Animations (non-blocking)
+      triggerSuccessBurst();
+      triggerVictoryJump();
+
+      // 4. Firestore check (safe import + error handling)
+      let userExists = false;
+
+      try {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        userExists = snap.exists();
+      } catch (err) {
+        console.warn('User check failed:', err);
+      }
+
+      // 5. Navigation (stable delay)
+      setTimeout(() => {
+        if (!userExists) {
+          router.replace('/launch');
+        } else {
+          router.replace('/dashboard');
+        }
+      }, 2500);
+    } catch (error) {
+      console.error('Login finalization failed:', error);
+      router.replace('/dashboard');
+    }
+  };
+
+  // ===============================
+  // GOOGLE LOGIN LOGIC
+  // ===============================
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
       try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) await finalizeLogin(result.user);
       } catch (error: any) {
         Alert.alert('Google Error', error.message);
         setGoogleLoading(false);
@@ -70,17 +149,49 @@ export default function LoginScreen() {
     }
   };
 
-  const [googleRequest, googleResponse, promptGoogleSignIn] =
-    Google.useIdTokenAuthRequest({
-      webClientId:
-        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
-      androidClientId:
-        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
-      iosClientId:
-        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
-      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
-    });
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const idToken =
+        googleResponse.authentication?.idToken ||
+        googleResponse.params?.id_token;
 
+      if (!idToken) return;
+
+      setGoogleLoading(true);
+      const credential = GoogleAuthProvider.credential(idToken);
+
+      signInWithCredential(auth, credential)
+        .then((result) => finalizeLogin(result.user))
+        .catch((err) => {
+          Alert.alert('Google Login Error', err.message);
+          setGoogleLoading(false);
+        });
+    }
+  }, [googleResponse]);
+
+  // ===============================
+  // EMAIL LOGIN LOGIC
+  // ===============================
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Oops!', 'Please enter both email and password.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (result.user) {
+        await finalizeLogin(result.user);
+      }
+    } catch (error: any) {
+      Alert.alert('Login failed', 'Check your email/password and try again.');
+      setLoading(false);
+    }
+  };
+
+  // ===============================
+  // ANIMATIONS (REMAIN UNCHANGED)
+  // ===============================
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -141,7 +252,7 @@ export default function LoginScreen() {
         }),
       ])
     ).start();
-  }, [float, glow, rotate, scale]);
+  }, []);
 
   const rotateInterpolate = rotate.interpolate({
     inputRange: [-1, 1],
@@ -193,96 +304,6 @@ export default function LoginScreen() {
         useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
-  };
-
-const finalizeLogin = async (user: any) => {
-    try {
-      // 1. Reminders (safe + non-blocking)
-      try {
-        await scheduleDailyReminders(user.uid, 'hype');
-      } catch (err) {
-        console.warn('Reminder scheduling failed:', err);
-      }
-
-      // 2. Push token (fully safe)
-      try {
-        const token = await registerForPushNotificationsAsync();
-
-        if (token) {
-          const { doc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('../lib/firebase');
-
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            pushToken: token,
-            lastLogin: new Date(),
-          });
-        }
-      } catch (err) {
-        console.warn('Push registration skipped:', err);
-      }
-
-      // 3. Animations (non-blocking)
-      triggerSuccessBurst();
-      triggerVictoryJump();
-
-      // 4. Firestore check (safe import + error handling)
-      let userExists = false;
-
-      try {
-        const { doc, getDoc } = await import('firebase/firestore');
-        const { db } = await import('../lib/firebase');
-
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        userExists = snap.exists();
-      } catch (err) {
-        console.warn('User check failed:', err);
-      }
-
-      // 5. Navigation (stable delay)
-      setTimeout(() => {
-        if (!userExists) {
-          router.replace('/launch');
-        } else {
-          router.replace('/dashboard');
-        }
-      }, 2500);
-    } catch (error) {
-      console.error('Login finalization failed:', error);
-      router.replace('/dashboard');
-    }
-  };
-
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const { id_token } = googleResponse.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-
-      setGoogleLoading(true);
-      signInWithCredential(auth, credential)
-        .then((result) => finalizeLogin(result.user))
-        .catch((err) => {
-          Alert.alert('Google Login Error', err.message);
-          setGoogleLoading(false);
-        });
-    }
-  }, [googleResponse]);
-
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Oops!', 'Please enter both email and password.');
-      return;
-    }
-    try {
-      setLoading(true);
-      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      if (result.user) {
-        await finalizeLogin(result.user);
-      }
-    } catch (error: any) {
-      Alert.alert('Login failed', 'Check your email/password and try again.');
-      setLoading(false);
-    }
   };
 
   return (
@@ -400,7 +421,7 @@ const finalizeLogin = async (user: any) => {
 
                 <Pressable
                   onPress={handleLogin}
-                  disabled={loading || googleLoading}
+                  disabled={anyLoading}
                   style={styles.mainButton}
                 >
                   <LinearGradient
