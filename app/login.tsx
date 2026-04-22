@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,9 +25,8 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions,
+  useWindowDimensions
 } from 'react-native';
-
 import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
@@ -55,93 +55,12 @@ export default function LoginScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
-  const [googleRequest, googleResponse, promptGoogleSignIn] =
-    Google.useIdTokenAuthRequest({
-      webClientId:
-        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
-      androidClientId:
-        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
-      iosClientId:
-        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c',
-      redirectUri:
-        Platform.OS === 'web'
-          ? 'https://glowgoal.com.ng/login'
-          : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
-    });
-
-  // ===============================
-  // FIXED FINAL LOGIN FLOW
-  // ===============================
-  const finalizeLogin = async (user: any) => {
-    try {
-      // 1. Reminders (safe + non-blocking)
-      try {
-        await scheduleDailyReminders(user.uid, 'hype');
-      } catch (err) {
-        console.warn('Reminder scheduling failed:', err);
-      }
-
-      // 2. Push token (fully safe)
-      try {
-        const token = await registerForPushNotificationsAsync();
-
-        if (token) {
-          const { doc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('../lib/firebase');
-
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            pushToken: token,
-            lastLogin: new Date(),
-          });
-        }
-      } catch (err) {
-        console.warn('Push registration skipped:', err);
-      }
-
-      // 3. Animations (non-blocking)
-      triggerSuccessBurst();
-      triggerVictoryJump();
-
-      // 4. Firestore check (safe import + error handling)
-      let userExists = false;
-
-      try {
-        const { doc, getDoc } = await import('firebase/firestore');
-        const { db } = await import('../lib/firebase');
-
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        userExists = snap.exists();
-      } catch (err) {
-        console.warn('User check failed:', err);
-      }
-
-      // 5. Navigation (stable delay)
-      setTimeout(() => {
-        if (!userExists) {
-          router.replace('/launch');
-        } else {
-          router.replace('/dashboard');
-        }
-      }, 2500);
-    } catch (error) {
-      console.error('Login finalization failed:', error);
-      router.replace('/dashboard');
-    }
-  };
-
-  // ===============================
-  // GOOGLE LOGIN FIX
-  // ===============================
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
-
       try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) await finalizeLogin(result.user);
+        await signInWithPopup(auth, provider);
       } catch (error: any) {
         Alert.alert('Google Error', error.message);
         setGoogleLoading(false);
@@ -151,60 +70,17 @@ export default function LoginScreen() {
     }
   };
 
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const idToken =
-        googleResponse.authentication?.idToken ||
-        googleResponse.params?.id_token;
+  const [googleRequest, googleResponse, promptGoogleSignIn] =
+    Google.useIdTokenAuthRequest({
+      webClientId:
+        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
+      androidClientId:
+        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
+      iosClientId:
+        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c.apps.googleusercontent.com',
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+    });
 
-      if (!idToken) return;
-
-      setGoogleLoading(true);
-
-      const credential = GoogleAuthProvider.credential(idToken);
-
-      signInWithCredential(auth, credential)
-        .then((result) => finalizeLogin(result.user))
-        .catch((err) => {
-          Alert.alert('Google Login Error', err.message);
-          setGoogleLoading(false);
-        });
-    }
-  }, [googleResponse]);
-
-  // ===============================
-  // EMAIL LOGIN
-  // ===============================
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Oops!', 'Please enter both email and password.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const result = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-
-      if (result.user) {
-        await finalizeLogin(result.user);
-      }
-    } catch (error: any) {
-      Alert.alert(
-        'Login failed',
-        'Check your email/password and try again.'
-      );
-      setLoading(false);
-    }
-  };
-
-  // ===============================
-  // ANIMATIONS (UNCHANGED LOGIC)
-  // ===============================
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -265,7 +141,7 @@ export default function LoginScreen() {
         }),
       ])
     ).start();
-  }, []);
+  }, [float, glow, rotate, scale]);
 
   const rotateInterpolate = rotate.interpolate({
     inputRange: [-1, 1],
@@ -319,14 +195,98 @@ export default function LoginScreen() {
     ]).start();
   };
 
-  // ===============================
-  // UI (UNCHANGED)
-  // ===============================
+const finalizeLogin = async (user: any) => {
+    try {
+      // 1. Reminders (safe + non-blocking)
+      try {
+        await scheduleDailyReminders(user.uid, 'hype');
+      } catch (err) {
+        console.warn('Reminder scheduling failed:', err);
+      }
+
+      // 2. Push token (fully safe)
+      try {
+        const token = await registerForPushNotificationsAsync();
+
+        if (token) {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('../lib/firebase');
+
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            pushToken: token,
+            lastLogin: new Date(),
+          });
+        }
+      } catch (err) {
+        console.warn('Push registration skipped:', err);
+      }
+
+      // 3. Animations (non-blocking)
+      triggerSuccessBurst();
+      triggerVictoryJump();
+
+      // 4. Firestore check (safe import + error handling)
+      let userExists = false;
+
+      try {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        userExists = snap.exists();
+      } catch (err) {
+        console.warn('User check failed:', err);
+      }
+
+      // 5. Navigation (stable delay)
+      setTimeout(() => {
+        if (!userExists) {
+          router.replace('/launch');
+        } else {
+          router.replace('/dashboard');
+        }
+      }, 2500);
+    } catch (error) {
+      console.error('Login finalization failed:', error);
+      router.replace('/dashboard');
+    }
+  };
+
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { id_token } = googleResponse.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+
+      setGoogleLoading(true);
+      signInWithCredential(auth, credential)
+        .then((result) => finalizeLogin(result.user))
+        .catch((err) => {
+          Alert.alert('Google Login Error', err.message);
+          setGoogleLoading(false);
+        });
+    }
+  }, [googleResponse]);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Oops!', 'Please enter both email and password.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const result = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (result.user) {
+        await finalizeLogin(result.user);
+      }
+    } catch (error: any) {
+      Alert.alert('Login failed', 'Check your email/password and try again.');
+      setLoading(false);
+    }
+  };
+
   return (
-    <LinearGradient
-      colors={['#828C6A', '#A0AB89', '#CCBEB1']}
-      style={styles.container}
-    >
+    <LinearGradient colors={['#828C6A', '#A0AB89', '#CCBEB1']} style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
@@ -337,45 +297,145 @@ export default function LoginScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <View
-              style={[
-                styles.responsiveWrapper,
-                isDesktop && styles.desktopCard,
-              ]}
-            >
+            <View style={[styles.responsiveWrapper, isDesktop && styles.desktopCard]}>
+              <View style={styles.mascotWrap}>
+                <Animated.View
+                  style={[
+                    styles.glow,
+                    {
+                      opacity: glow,
+                      transform: [{ scale: glow }],
+                    },
+                  ]}
+                />
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.burstRing,
+                    {
+                      opacity: burstOpacity,
+                      transform: [
+                        { scale: burstScale },
+                        { rotate: burstRotateInterpolate },
+                      ],
+                    },
+                  ]}
+                />
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.burstSparkHorizontal,
+                    {
+                      opacity: burstOpacity,
+                      transform: [{ scale: burstScale }],
+                    },
+                  ]}
+                />
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.burstSparkVertical,
+                    {
+                      opacity: burstOpacity,
+                      transform: [{ scale: burstScale }],
+                    },
+                  ]}
+                />
+                <Animated.Image
+                  source={require('../assets/images/star.png')}
+                  resizeMode="contain"
+                  style={[
+                    styles.logoImage,
+                    {
+                      transform: [
+                        { translateY: Animated.add(float, jump) },
+                        { scale },
+                        { rotate: rotateInterpolate },
+                      ],
+                    },
+                  ]}
+                />
+              </View>
+
               <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>Your buddy missed you!</Text>
 
-              <TextInput
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-              />
+              <View style={styles.formCard}>
+                <TextInput
+                  placeholder="Email"
+                  placeholderTextColor="#666"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor="#666"
+                    style={styles.passwordInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                  />
+                  <Pressable
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeButton}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={22}
+                      color="#828C6A"
+                    />
+                  </Pressable>
+                </View>
 
-              <TextInput
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                style={styles.input}
-              />
-
-              <Pressable onPress={handleLogin} disabled={anyLoading}>
-                <LinearGradient
-                  colors={['#FFD580', '#FFB347']}
-                  style={styles.button}
+                <Pressable
+                  onPress={() => router.push('/forgotpassword')}
+                  style={styles.forgotPasswordWrap}
                 >
-                  {loading ? (
-                    <ActivityIndicator />
-                  ) : (
-                    <Text>Log In</Text>
-                  )}
-                </LinearGradient>
-              </Pressable>
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </Pressable>
 
-              <Pressable onPress={handleGoogleSignIn}>
-                <Text>Continue with Google</Text>
-              </Pressable>
+                <Pressable
+                  onPress={handleLogin}
+                  disabled={loading || googleLoading}
+                  style={styles.mainButton}
+                >
+                  <LinearGradient
+                    colors={['#FFD580', '#FFB347']}
+                    style={styles.mainButtonGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#3B3128" />
+                    ) : (
+                      <Text style={styles.buttonText}>Log In</Text>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              </View>
+
+              <View style={styles.socialSection}>
+                <Pressable
+                  style={styles.socialButton}
+                  onPress={handleGoogleSignIn}
+                  disabled={anyLoading}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator color="#2F2A26" />
+                  ) : (
+                    <Text style={styles.socialText}>Continue with Google</Text>
+                  )}
+                </Pressable>
+              </View>
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>New here?</Text>
+                <Pressable onPress={() => router.push('/signup')}>
+                  <Text style={styles.signupLink}> Create an account</Text>
+                </Pressable>
+              </View>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -385,65 +445,25 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  safeArea: {
-    flex: 1,
-  },
-
-  flex: {
-    flex: 1,
-  },
-
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
+  flex: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-
   responsiveWrapper: {
     width: '100%',
     maxWidth: 420,
     alignItems: 'center',
   },
-
   desktopCard: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     padding: 40,
     borderRadius: 40,
   },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#FFF',
-    marginBottom: 25,
-    textAlign: 'center',
-  },
-
-  input: {
-    width: '100%',
-    backgroundColor: '#FFF',
-    height: 55,
-    borderRadius: 18,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    marginBottom: 12,
-    color: '#000',
-  },
-
-  button: {
-    height: 55,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-
-  // Optional (if you re-add fancy UI later)
   mascotWrap: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -452,7 +472,6 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
   },
-
   glow: {
     position: 'absolute',
     width: 180,
@@ -460,7 +479,6 @@ const styles = StyleSheet.create({
     borderRadius: 90,
     backgroundColor: 'rgba(255, 213, 128, 0.35)',
   },
-
   burstRing: {
     position: 'absolute',
     width: 160,
@@ -469,7 +487,6 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: 'rgba(255, 240, 190, 0.95)',
   },
-
   burstSparkHorizontal: {
     position: 'absolute',
     width: 200,
@@ -477,7 +494,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255, 244, 210, 0.9)',
   },
-
   burstSparkVertical: {
     position: 'absolute',
     width: 10,
@@ -485,9 +501,98 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255, 244, 210, 0.9)',
   },
-
   logoImage: {
     width: 150,
     height: 150,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFF',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#3A3128',
+    marginBottom: 30,
+    fontWeight: '600',
+  },
+  formCard: {
+    width: '100%',
+    gap: 12,
+  },
+  input: {
+    backgroundColor: '#FFF',
+    height: 55,
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    fontSize: 16,
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 18,
+    height: 55,
+    overflow: 'hidden',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 20,
+    fontSize: 16,
+  },
+  eyeButton: {
+    paddingRight: 15,
+  },
+  forgotPasswordWrap: {
+    alignSelf: 'flex-end',
+    marginTop: -2,
+  },
+  forgotPasswordText: {
+    color: '#4F5A3E',
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  mainButton: {
+    width: '100%',
+    marginTop: 6,
+  },
+  mainButtonGradient: {
+    height: 55,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontWeight: '800',
+    fontSize: 18,
+    color: '#3B3128',
+  },
+  socialSection: {
+    width: '100%',
+    marginTop: 15,
+  },
+  socialButton: {
+    width: '100%',
+    height: 55,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  socialText: {
+    fontWeight: '700',
+    color: '#2F2A26',
+  },
+  footer: {
+    flexDirection: 'row',
+    marginTop: 25,
+  },
+  footerText: {
+    color: '#3A3128',
+  },
+  signupLink: {
+    fontWeight: '800',
+    color: '#4F5A3E',
   },
 });
