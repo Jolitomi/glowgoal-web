@@ -124,21 +124,33 @@ export default function SignUpScreen() {
   }
 };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
+ const handleGoogleSignIn = async () => {
+  setGoogleLoading(true);
+
+  try {
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) await finalizeSignUp(result.user);
-      } catch (error: any) {
-        Alert.alert('Login Error', error.message);
-        setGoogleLoading(false);
+
+      const result = await signInWithPopup(auth, provider);
+
+      if (result.user) {
+        await finalizeSignUp(result.user);
       }
-    } else {
-      promptGoogleSignIn();
+
+      setGoogleLoading(false);
+      return;
     }
-  };
+
+    // MOBILE (Expo Auth Session flow)
+    promptGoogleSignIn();
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : 'Google sign-in failed';
+
+    Alert.alert('Login Error', message);
+    setGoogleLoading(false);
+  }
+};
 
   useEffect(() => {
     Animated.loop(
@@ -199,20 +211,37 @@ export default function SignUpScreen() {
     ]).start();
   };
 
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const idToken = googleResponse.authentication?.idToken || googleResponse.params?.id_token;
-      if (!idToken) return;
+ useEffect(() => {
+  const handleGoogleAuth = async () => {
+    if (googleResponse?.type !== 'success') return;
+
+    try {
       setGoogleLoading(true);
+
+      const idToken =
+        googleResponse.authentication?.idToken ||
+        googleResponse.params?.id_token;
+
+      if (!idToken) {
+        throw new Error('Missing Google ID token');
+      }
+
       const credential = GoogleAuthProvider.credential(idToken);
-      signInWithCredential(auth, credential)
-        .then((result) => finalizeSignUp(result.user))
-        .catch((err) => {
-          Alert.alert('Firebase Error', err.message);
-          setGoogleLoading(false);
-        });
+
+      const result = await signInWithCredential(auth, credential);
+
+      await finalizeSignUp(result.user);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Google sign-in failed';
+
+      Alert.alert('Firebase Error', message);
+      setGoogleLoading(false);
     }
-  }, [googleResponse]);
+  };
+
+  handleGoogleAuth();
+}, [googleResponse]);
 
   const handleEmailSignUp = async () => {
     if (!name || !email || password.length < 6) {

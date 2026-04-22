@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
   GoogleAuthProvider,
+  signInWithCredential,
   signInWithEmailAndPassword,
-  signInWithPopup
+  signInWithPopup,
 } from 'firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -52,7 +55,23 @@ export default function LoginScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
+  // ===============================
+  // GOOGLE AUTH REQUEST HOOK
+  // ===============================
+  const [googleRequest, googleResponse, promptGoogleSignIn] =
+    Google.useIdTokenAuthRequest({
+      webClientId:
+        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
+      androidClientId:
+        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
+      iosClientId:
+        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c',
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+    });
 
+  // ===============================
+  // FIXED FINAL LOGIN FLOW
+  // ===============================
   const finalizeLogin = async (user: any) => {
     try {
       // 1. Reminders (safe + non-blocking)
@@ -115,19 +134,61 @@ export default function LoginScreen() {
   // GOOGLE LOGIN LOGIC
   // ===============================
   const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
+  setGoogleLoading(true);
+
+  try {
     if (Platform.OS === 'web') {
       const provider = new GoogleAuthProvider();
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) await finalizeLogin(result.user);
-      } catch (error: any) {
-        Alert.alert('Google Error', error.message);
-        setGoogleLoading(false);
+      const result = await signInWithPopup(auth, provider);
+
+      if (result.user) {
+        await finalizeLogin(result.user);
       }
-    } 
+      return;
+    }
+
+    // MOBILE (Expo Auth Session flow)
+    promptGoogleSignIn();
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : 'Google sign-in failed';
+
+    Alert.alert('Google Error', message);
+    setGoogleLoading(false);
+  }
+};
+
+useEffect(() => {
+  const handleGoogleResponse = async () => {
+    if (googleResponse?.type !== 'success') return;
+
+    try {
+      setGoogleLoading(true);
+
+      const idToken =
+        googleResponse.authentication?.idToken ||
+        googleResponse.params?.id_token;
+
+      if (!idToken) {
+        throw new Error('No Google ID token received');
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken);
+
+      const result = await signInWithCredential(auth, credential);
+
+      await finalizeLogin(result.user);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Google login failed';
+
+      Alert.alert('Google Login Error', message);
+      setGoogleLoading(false);
+    }
   };
 
+  handleGoogleResponse();
+}, [googleResponse]);
 
   // ===============================
   // EMAIL LOGIN LOGIC
@@ -149,9 +210,6 @@ export default function LoginScreen() {
     }
   };
 
-  // ===============================
-  // ANIMATIONS (REMAIN UNCHANGED)
-  // ===============================
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
