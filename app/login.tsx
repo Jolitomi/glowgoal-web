@@ -1,14 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as AuthSession from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import {
   GoogleAuthProvider,
-  signInWithCredential,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithPopup
 } from 'firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -55,23 +52,7 @@ export default function LoginScreen() {
 
   const jump = useRef(new Animated.Value(0)).current;
 
-  // ===============================
-  // GOOGLE AUTH REQUEST HOOK
-  // ===============================
-  const [googleRequest, googleResponse, promptGoogleSignIn] =
-    Google.useIdTokenAuthRequest({
-      webClientId:
-        '146035975275-rrovmbvblm2uh5jd2hvp9pnbitvta8ti.apps.googleusercontent.com',
-      androidClientId:
-        '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
-      iosClientId:
-        '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c',
-      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
-    });
 
-  // ===============================
-  // FIXED FINAL LOGIN FLOW
-  // ===============================
   const finalizeLogin = async (user: any) => {
     try {
       // 1. Reminders (safe + non-blocking)
@@ -144,30 +125,9 @@ export default function LoginScreen() {
         Alert.alert('Google Error', error.message);
         setGoogleLoading(false);
       }
-    } else {
-      promptGoogleSignIn();
-    }
+    } 
   };
 
-  useEffect(() => {
-    if (googleResponse?.type === 'success') {
-      const idToken =
-        googleResponse.authentication?.idToken ||
-        googleResponse.params?.id_token;
-
-      if (!idToken) return;
-
-      setGoogleLoading(true);
-      const credential = GoogleAuthProvider.credential(idToken);
-
-      signInWithCredential(auth, credential)
-        .then((result) => finalizeLogin(result.user))
-        .catch((err) => {
-          Alert.alert('Google Login Error', err.message);
-          setGoogleLoading(false);
-        });
-    }
-  }, [googleResponse]);
 
   // ===============================
   // EMAIL LOGIN LOGIC
