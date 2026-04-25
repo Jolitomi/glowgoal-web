@@ -13,9 +13,9 @@ import {
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -25,7 +25,7 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from 'react-native';
 import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
@@ -43,6 +43,16 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const anyLoading = loading || googleLoading;
+
+  // Custom Modal State for Web-friendly Alerts
+  const [errorModal, setErrorModal] = useState<{visible: boolean, message: string}>({
+    visible: false,
+    message: '',
+  });
+
+  const showError = (msg: string) => {
+    setErrorModal({ visible: true, message: msg });
+  };
 
   const float = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -66,7 +76,7 @@ export default function LoginScreen() {
         '146035975275-ucd45fgn5u8i45uut6lct6r21is9qlej.apps.googleusercontent.com',
       iosClientId:
         '146035975275-3qp84p3oi3b20rbcqrpqkfvq8vm3co5c',
-      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login': AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
+      redirectUri: Platform.OS === 'web' ? 'https://glowgoal.com.ng/login' : AuthSession.makeRedirectUri({ scheme: 'glowgoal' }),
     });
 
   // ===============================
@@ -74,39 +84,36 @@ export default function LoginScreen() {
   // ===============================
   const finalizeLogin = async (user: any) => {
     try {
-      // 1. Reminders (safe + non-blocking)
-      try {
-        await scheduleDailyReminders(user.uid, 'hype');
-      } catch (err) {
-        console.warn('Reminder scheduling failed:', err);
-      }
-
-      // 2. Push token (fully safe)
-      try {
-        const token = await registerForPushNotificationsAsync();
-
-        if (token) {
-          const { doc, updateDoc } = await import('firebase/firestore');
-          const { db } = await import('../lib/firebase');
-
-          const userRef = doc(db, 'users', user.uid);
-          await updateDoc(userRef, {
-            pushToken: token,
-            lastLogin: new Date(),
-          });
-        }
-      } catch (err) {
-        console.warn('Push registration skipped:', err);
-      }
-
-      // 3. Animations (non-blocking)
+      // 1. Trigger Animations immediately
       triggerSuccessBurst();
       triggerVictoryJump();
 
-      // 4. Firestore check (safe import + error handling)
-      let userExists = false;
+      // 2. Perform background tasks (Reminders & Tokens)
+      const performSetup = async () => {
+        try {
+          await scheduleDailyReminders(user.uid, 'hype');
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            // FIX: Pull functions from firebase/firestore and db from local lib
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+              pushToken: token,
+              lastLogin: new Date(),
+            });
+          }
+        } catch (err) {
+          console.warn('Background setup failed:', err);
+        }
+      };
+      performSetup();
 
+      // 3. Firestore check (determine if new user)
+      let userExists = false;
       try {
+        // FIX: Pull functions from firebase/firestore and db from local lib
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../lib/firebase');
 
@@ -116,14 +123,15 @@ export default function LoginScreen() {
         console.warn('User check failed:', err);
       }
 
-      // 5. Navigation (stable delay)
+      // 4. Stable Delay for Navigation
       setTimeout(() => {
         if (!userExists) {
           router.replace('/launch');
         } else {
           router.replace('/dashboard');
         }
-      }, 2500);
+      }, 2200);
+
     } catch (error) {
       console.error('Login finalization failed:', error);
       router.replace('/dashboard');
@@ -134,68 +142,50 @@ export default function LoginScreen() {
   // GOOGLE LOGIN LOGIC
   // ===============================
   const handleGoogleSignIn = async () => {
-  setGoogleLoading(true);
-
-  try {
-    if (Platform.OS === 'web') {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-
-      if (result.user) {
-        await finalizeLogin(result.user);
-      }
-      return;
-    }
-
-    // MOBILE (Expo Auth Session flow)
-    promptGoogleSignIn();
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : 'Google sign-in failed';
-
-    Alert.alert('Google Error', message);
-    setGoogleLoading(false);
-  }
-};
-
-useEffect(() => {
-  const handleGoogleResponse = async () => {
-    if (googleResponse?.type !== 'success') return;
-
+    setGoogleLoading(true);
     try {
-      setGoogleLoading(true);
-
-      const idToken =
-        googleResponse.authentication?.idToken ||
-        googleResponse.params?.id_token;
-
-      if (!idToken) {
-        throw new Error('No Google ID token received');
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          await finalizeLogin(result.user);
+        }
+        return;
       }
-
-      const credential = GoogleAuthProvider.credential(idToken);
-
-      const result = await signInWithCredential(auth, credential);
-
-      await finalizeLogin(result.user);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Google login failed';
-
-      Alert.alert('Google Login Error', message);
+      promptGoogleSignIn();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Google sign-in failed';
+      showError(message);
       setGoogleLoading(false);
     }
   };
 
-  handleGoogleResponse();
-}, [googleResponse]);
+  useEffect(() => {
+    const handleGoogleResponse = async () => {
+      if (googleResponse?.type !== 'success') return;
+      try {
+        setGoogleLoading(true);
+        const idToken = googleResponse.authentication?.idToken || googleResponse.params?.id_token;
+        if (!idToken) throw new Error('No Google ID token received');
+
+        const credential = GoogleAuthProvider.credential(idToken);
+        const result = await signInWithCredential(auth, credential);
+        await finalizeLogin(result.user);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Google login failed';
+        showError(message);
+        setGoogleLoading(false);
+      }
+    };
+    handleGoogleResponse();
+  }, [googleResponse]);
 
   // ===============================
   // EMAIL LOGIN LOGIC
   // ===============================
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Oops!', 'Please enter both email and password.');
+      showError('Please enter both email and password.');
       return;
     }
     try {
@@ -205,11 +195,14 @@ useEffect(() => {
         await finalizeLogin(result.user);
       }
     } catch (error: any) {
-      Alert.alert('Login failed', 'Check your email/password and try again.');
+      showError('Check your email/password and try again.');
       setLoading(false);
     }
   };
 
+  // ===============================
+  // ANIMATIONS
+  // ===============================
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -479,6 +472,27 @@ useEffect(() => {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <Modal
+        transparent
+        visible={errorModal.visible}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Ionicons name="alert-circle" size={40} color="#828C6A" />
+            <Text style={styles.modalTitle}>Wait a second!</Text>
+            <Text style={styles.modalText}>{errorModal.message}</Text>
+            
+            <Pressable 
+              style={styles.modalButton} 
+              onPress={() => setErrorModal({ ...errorModal, visible: false })}
+            >
+              <Text style={styles.modalButtonText}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </LinearGradient>
   );
 }
@@ -633,5 +647,50 @@ const styles = StyleSheet.create({
   signupLink: {
     fontWeight: '800',
     color: '#4F5A3E',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#3A3128',
+    marginTop: 15,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  modalButton: {
+    backgroundColor: '#828C6A',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 15,
+  },
+  modalButtonText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
