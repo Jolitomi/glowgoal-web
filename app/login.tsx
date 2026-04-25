@@ -82,24 +82,21 @@ export default function LoginScreen() {
   // ===============================
   // FIXED FINAL LOGIN FLOW
   // ===============================
-  const finalizeLogin = async (user: any) => {
+ const finalizeLogin = async (user: any) => {
     try {
       // 1. Trigger Animations immediately
       triggerSuccessBurst();
       triggerVictoryJump();
 
-      // 2. Perform background tasks (Reminders & Tokens)
+      // 2. Background tasks (Tokens & Reminders)
       const performSetup = async () => {
         try {
           await scheduleDailyReminders(user.uid, 'hype');
           const token = await registerForPushNotificationsAsync();
           if (token) {
-            // FIX: Pull functions from firebase/firestore and db from local lib
             const { doc, updateDoc } = await import('firebase/firestore');
             const { db } = await import('../lib/firebase');
-            
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
+            await updateDoc(doc(db, 'users', user.uid), {
               pushToken: token,
               lastLogin: new Date(),
             });
@@ -113,19 +110,30 @@ export default function LoginScreen() {
       // 3. Firestore check (determine if new user)
       let userExists = false;
       try {
-        // FIX: Pull functions from firebase/firestore and db from local lib
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../lib/firebase');
 
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        userExists = snap.exists();
+        // IMPORTANT: Double check your collection name is 'users' in Firebase Console
+        const userDocRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userDocRef);
+        
+        if (snap.exists()) {
+          userExists = true;
+          console.log("User document found. Proceeding to Dashboard.");
+        } else {
+          console.log("No user document found for UID:", user.uid);
+          userExists = false;
+        }
       } catch (err) {
-        console.warn('User check failed:', err);
+        // If there's a permission error, we default to dashboard so they aren't stuck
+        console.error('Firestore check error:', err);
+        userExists = true; 
       }
 
-      // 4. Stable Delay for Navigation
+      // 4. Controlled Navigation
       setTimeout(() => {
         if (!userExists) {
+          // Only go to launch if we are 100% sure the doc doesn't exist
           router.replace('/launch');
         } else {
           router.replace('/dashboard');
