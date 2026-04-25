@@ -82,7 +82,7 @@ export default function LoginScreen() {
   // ===============================
   // FIXED FINAL LOGIN FLOW
   // ===============================
- const finalizeLogin = async (user: any) => {
+  const finalizeLogin = async (user: any) => {
     try {
       // 1. Trigger Animations immediately
       triggerSuccessBurst();
@@ -96,10 +96,14 @@ export default function LoginScreen() {
           if (token) {
             const { doc, updateDoc } = await import('firebase/firestore');
             const { db } = await import('../lib/firebase');
-            await updateDoc(doc(db, 'users', user.uid), {
-              pushToken: token,
+            
+            // Updated to target the correct sub-collection document shown in your console
+            const prefRef = doc(db, 'users', user.uid, 'profile', 'preferences');
+            
+            await updateDoc(prefRef, {
+              expoPushToken: token, // Matches your Firestore field name
               lastLogin: new Date(),
-            });
+            }).catch(() => console.log("Preferences doc not found for token update"));
           }
         } catch (err) {
           console.warn('Background setup failed:', err);
@@ -113,19 +117,18 @@ export default function LoginScreen() {
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../lib/firebase');
 
-        // IMPORTANT: Double check your collection name is 'users' in Firebase Console
-        const userDocRef = doc(db, 'users', user.uid);
-        const snap = await getDoc(userDocRef);
+        // IMPORTANT: We now check for the 'preferences' document inside the 'profile' sub-collection
+        const prefRef = doc(db, 'users', user.uid, 'profile', 'preferences');
+        const snap = await getDoc(prefRef);
         
         if (snap.exists()) {
           userExists = true;
-          console.log("User document found. Proceeding to Dashboard.");
+          console.log("User preferences found. Proceeding to Dashboard.");
         } else {
-          console.log("No user document found for UID:", user.uid);
+          console.log("No preferences document found for UID:", user.uid);
           userExists = false;
         }
       } catch (err) {
-        // If there's a permission error, we default to dashboard so they aren't stuck
         console.error('Firestore check error:', err);
         userExists = true; 
       }
@@ -133,7 +136,6 @@ export default function LoginScreen() {
       // 4. Controlled Navigation
       setTimeout(() => {
         if (!userExists) {
-          // Only go to launch if we are 100% sure the doc doesn't exist
           router.replace('/launch');
         } else {
           router.replace('/dashboard');
