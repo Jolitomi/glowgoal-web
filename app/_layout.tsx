@@ -23,10 +23,9 @@ export default function RootLayout() {
     });
 
     // 2. Handle Authentication Routing
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+   const unsubscribe = onAuthStateChanged(auth, (user) => {
       const currentSegment = segmentsRef.current[0] as string;
       
-      // Determine if we are on a page that should handle its own logic
       const isAuthPage = 
         currentSegment === 'login' || 
         currentSegment === 'signup' || 
@@ -34,14 +33,27 @@ export default function RootLayout() {
         currentSegment === 'index' || 
         !currentSegment;
 
+      // NEW: Check if we are already where we need to be
+      const isAlreadyInApp = 
+        currentSegment === 'dashboard' || 
+        currentSegment === 'goals' || 
+        currentSegment === 'profile';
+
       if (user) {
-        // --- THE TRAP FIX ---
-        // If the user is already inside the app (not on an auth page), 
-        // STOP. Do not force them back to the dashboard.
-        if (!isAuthPage) {
+        // 1. If the user is on Login/Signup, DO NOTHING.
+        // Let LoginScreen's animations and finalizeLogin handle the navigation.
+        if (isAuthPage) {
           return; 
         }
 
+        // 2. If the user is already on the dashboard or other app pages, STOP.
+        // This prevents the "Glitch" where the layout tries to redirect you 
+        // to a page you are already standing on.
+        if (isAlreadyInApp) {
+          return;
+        }
+
+        // 3. This part now only runs on "Cold Starts" (opening the app while already logged in)
         const creationTime = new Date(user.metadata.creationTime || 0).getTime();
         const now = new Date().getTime();
         const isNewUser = now - creationTime < 10000;
@@ -52,13 +64,12 @@ export default function RootLayout() {
           router.replace('/dashboard');
         }
       } else {
-        // Only redirect to welcome if they aren't already on an auth page
+        // 4. If no user, only redirect to welcome if we aren't already there
         if (segmentsRef.current.length > 0 && !isAuthPage) {
           router.replace('/');
         }
       }
     });
-
     return unsubscribe;
   }, []); // EMPTY dependency array is the key!
 
