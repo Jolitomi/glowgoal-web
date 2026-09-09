@@ -5,14 +5,23 @@ import { buildGoalAiSignals, GoalAiSignals } from './goal-ai-signals';
 import { GoalTask, makeId } from './goals';
 import { getUserPreferences } from './preferences';
 
-const API_KEY = process.env.GEMINI_API_KEY || ''; 
-
-if (!API_KEY) {
-  throw new Error("Missing GEMINI_API_KEY");
-}
 const TARGET_STEP_COUNT = 7;
 
-const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+// Safely retrieve API key for Expo Web, Mobile, and Node runtimes
+function getApiKey(): string {
+  return (
+    process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    ''
+  );
+}
+
+// Lazy initialization: Instantiate GoogleGenerativeAI dynamically inside function calls
+function getGeminiClient(): GoogleGenerativeAI | null {
+  const key = getApiKey();
+  if (!key) return null;
+  return new GoogleGenerativeAI(key);
+}
 
 type GoalState =
   | 'fresh_start'
@@ -515,7 +524,10 @@ export async function generateGoalTasks(params: {
     buddy
   );
 
+  const genAI = getGeminiClient();
+
   if (!genAI) {
+    console.warn("Gemini API key missing or unreadable client-side. Utilizing fallback system.");
     return { buddy, tasks: toTasks(fallbackSteps), usedFallback: true };
   }
 
@@ -587,6 +599,8 @@ export async function regenerateSingleGoalStep(params: {
 
   const safeIndex = Math.max(0, Math.min(params.stepIndex, fallbackSteps.length - 1));
   const fallbackStep = fallbackSteps[safeIndex];
+
+  const genAI = getGeminiClient();
 
   if (!safeGoalTitle || !genAI) {
     return { buddy, stepTitle: fallbackStep, usedFallback: true };
