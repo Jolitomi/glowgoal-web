@@ -5,10 +5,10 @@ import { buildGoalAiSignals, GoalAiSignals } from './goal-ai-signals';
 import { GoalTask, makeId } from './goals';
 import { getUserPreferences } from './preferences';
 
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY || ''; 
+const API_KEY = process.env.GEMINI_API_KEY || ''; 
 
 if (!API_KEY) {
-  throw new Error("Missing GOOGLE_API_KEY");
+  throw new Error("Missing GEMINI_API_KEY");
 }
 const TARGET_STEP_COUNT = 7;
 
