@@ -164,7 +164,7 @@ export default function CreateGoalScreen() {
             <View style={styles.contentContainer}>
               <View style={styles.pageHeader}>
                 <Pressable onPress={() => router.push('/goals')} style={styles.backButton}>
-                  <Ionicons name="chevron-back" size={22} color="#FFF7EF" />
+                  <Ionicons name="chevron-back" size={22} color="#F0ECFF" />
                 </Pressable>
 
                 <View style={styles.pageHeaderTextWrap}>
@@ -227,7 +227,7 @@ export default function CreateGoalScreen() {
                         <Ionicons
                           name={cat.icon}
                           size={16}
-                          color={active ? '#211A3A' : '#5C5248'}
+                          color={active ? '#211A3A' : '#77718C'}
                         />
                         <Text style={[styles.chipText, active && styles.chipTextActive]}>
                           {cat.label}
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   sidebarNav: { gap: 15 },
 
   contentContainer: { width: '100%', maxWidth: 820, alignSelf: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 150 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 140 },
 
   pageHeader: {
     flexDirection: 'row',
@@ -406,14 +406,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     textTransform: 'lowercase',
     letterSpacing: -0.5,
   },
   headerSubtext: {
     marginTop: 4,
     fontSize: 13,
-    color: 'rgba(255,247,239,0.75)',
+    color: '#77718C',
     lineHeight: 18,
   },
   backButton: {
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
 
   heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#211A3A',
     borderRadius: 26,
     padding: 22,
     borderWidth: 1,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   buddyBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#F5EDE3',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -463,14 +463,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 32,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     letterSpacing: -0.5,
   },
   heroDescription: {
     marginTop: 8,
     fontSize: 14,
     lineHeight: 21,
-    color: 'rgba(255,247,239,0.82)',
+    color: 'rgba(255,255,255,0.82)',
     maxWidth: 460,
   },
   mascotWrapper: {
@@ -484,11 +484,11 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: 'rgba(255,213,128,0.18)',
+    backgroundColor: 'rgba(109,74,255,0.16)',
   },
 
   formCard: {
-    backgroundColor: '#EFE6D8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 26,
     padding: 18,
     marginBottom: 18,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#5F5347',
+    color: '#77718C',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -511,10 +511,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#FBF7F1',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6DAC8',
-    color: '#473C34',
+    borderColor: '#E5E0F2',
+    color: '#211A3A',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -533,9 +533,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#FBF7F1',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6DAC8',
+    borderColor: '#E5E0F2',
   },
   chipActive: {
     backgroundColor: '#D7FF64',
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#5C5248',
+    color: '#77718C',
   },
   chipTextActive: {
     color: '#211A3A',
