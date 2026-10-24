@@ -623,7 +623,7 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' }),
+          active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   sidebarBrand: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#211A3A',
+    color: '#FFF',
     marginBottom: 50,
     letterSpacing: -1,
   },
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  greeting: { fontSize: 28, fontWeight: '900', color: '#211A3A', letterSpacing: -1 },
+  greeting: { fontSize: 28, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
   subtitle: { fontSize: 14, color: 'rgba(33,26,58,0.68)', fontWeight: '500' },
   profileCircle: {
     width: 44,
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(109,74,255,0.18)',
   },
-  profileInitial: { fontWeight: '800', color: '#211A3A' },
+  profileInitial: { fontWeight: '800', color: '#FFF' },
 
   heroCard: {
     backgroundColor: '#211A3A',
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
   },
   heroDescription: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.78)',
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 10,
     marginBottom: 20,
     lineHeight: 20,
@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', gap: 16, marginTop: 16, marginBottom: 22 },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 4,
   },
-  statValue: { fontSize: 22, fontWeight: '900', color: '#211A3A' },
+  statValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
   statValueActive: { color: '#D7FF64' },
 
   goalsSection: {
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
   goalsTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#211A3A',
+    color: '#FFF',
     textTransform: 'lowercase',
   },
   goalsCount: {
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     overflow: 'hidden',
     backgroundColor: 'rgba(109,74,255,0.08)',
-    color: '#211A3A',
+    color: '#FFF',
     fontWeight: '800',
     paddingTop: Platform.OS === 'android' ? 4 : 6,
   },
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(109,74,255,0.12)',
   },
   emptyStateTitle: {
-    color: '#211A3A',
+    color: '#FFF',
     fontSize: 16,
     fontWeight: '900',
     marginBottom: 6,
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
   },
 
   goalCard: {
-    backgroundColor: '#211A3AFFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     marginBottom: 14,
@@ -921,7 +921,7 @@ const styles = StyleSheet.create({
   },
   mobileNav: {
     height: 70,
-    backgroundColor: '#211A3AFFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 25,
     flexDirection: 'row',
     alignItems: 'center',
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: '#211A3AFFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     padding: 24,
     borderWidth: 1,
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   modalDeleteText: {
-    color: '#211A3A',
+    color: '#FFF',
     fontWeight: '900',
     fontSize: 14,
   },
@@ -1042,7 +1042,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   guestBannerButtonText: {
-    color: '#211A3AFFF',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800',
   },
