@@ -320,18 +320,18 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
   loadingContainer: { flex: 1, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#FFF', fontWeight: '700' },
+  loadingText: { color: '#211A3A', fontWeight: '700' },
 
   // UPDATED SIDEBAR
   sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#171329', padding: 40, zIndex: 100 },
   sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 50, letterSpacing: -1 },
   sidebarNav: { gap: 15 },
 
-  contentContainer: { alignSelf: 'center' },
+  contentContainer: { width: '100%', maxWidth: 1040, alignSelf: 'center' },
   header: { marginBottom: 24 },
   greeting: { fontSize: 32, fontWeight: '900', color: '#211A3A', letterSpacing: -1 },
   subtitle: { color: '#77718C', fontWeight: '500' },
-  statsHeroRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
+  statsHeroRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
   statsHeroColumn: { flexDirection: 'column' },
   fullWidthCard: { width: '100%' },
   ringCard: { flex: 1, backgroundColor: '#211A3A', borderRadius: 28, padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
