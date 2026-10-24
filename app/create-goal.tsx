@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#F0ECFF',
+    color: '#211A3A',
     textTransform: 'lowercase',
     letterSpacing: -0.5,
   },
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 32,
     fontWeight: '900',
-    color: '#F0ECFF',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   heroDescription: {
