@@ -118,7 +118,7 @@ export default function GoalsScreen() {
                   <Text style={styles.subtitle}>making magic happen today.</Text>
                 </View>
                 <Pressable style={styles.newGoalBtn} onPress={() => router.push('/create-goal')}>
-                  <Ionicons name="add" size={24} color="#5A3D24" />
+                  <Ionicons name="add" size={24} color="#211A3A" />
                 </Pressable>
               </View>
 
@@ -202,60 +202,60 @@ export default function GoalsScreen() {
 function NavItem({ label, icon, active, onPress, isVertical }: any) {
   return (
     <Pressable onPress={onPress} style={[styles.navItem, isVertical && styles.navItemVertical, active && isVertical && styles.navItemVerticalActive]}>
-      <Ionicons name={active ? icon : (`${icon}-outline` as any)} size={isVertical ? 22 : 24} color={active ? (isVertical ? '#FFD580' : '#5A3D24') : (isVertical ? 'rgba(255,255,255,0.4)' : '#A4988D')} />
-      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' })]}>{label}</Text>
+      <Ionicons name={active ? icon : (`${icon}-outline` as any)} size={isVertical ? 22 : 24} color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.48)' : '#89839D')} />
+      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' })]}>{label}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
-  sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#6D7856', padding: 40, zIndex: 100 },
-  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 50, letterSpacing: -1 },
+  sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#171329', padding: 40, zIndex: 100 },
+  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#211A3A', marginBottom: 50, letterSpacing: -1 },
   sidebarNav: { gap: 15 },
   mobileNavWrapper: { position: 'absolute', bottom: 30, left: 20, right: 20, zIndex: 9999 },
   mobileNav: { height: 70, backgroundColor: '#FFFFFF', borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', shadowOpacity: 0.1, elevation: 10 },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navItemVertical: { flexDirection: 'row', padding: 12, borderRadius: 12, gap: 12, width: '100%' },
-  navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  navItemVerticalActive: { backgroundColor: 'rgba(109,74,255,0.12)' },
   navLabel: { fontWeight: '700' },
-  navLabelMobile: { fontSize: 10, color: '#6D7856', marginTop: 4 },
-  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
+  navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
+  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.68)' },
   contentContainer: { width: '100%', maxWidth: 600, alignSelf: 'center' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 150 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
   buddyCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   headerBuddy: { width: 45, height: 45 },
   greetingWrapper: { flex: 1 },
-  greeting: { fontSize: 28, fontWeight: '900', color: '#FFF', textTransform: 'lowercase' },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
+  greeting: { fontSize: 28, fontWeight: '900', color: '#211A3A', textTransform: 'lowercase' },
+  subtitle: { fontSize: 14, color: 'rgba(33,26,58,0.68)' },
   newGoalBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center' },
   goalsList: { gap: 16 },
   goalCard: { backgroundColor: '#F9F6F1', borderRadius: 24, padding: 20 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   categoryLabel: { fontSize: 10, fontWeight: '800', color: '#B6AB9F', textTransform: 'uppercase', letterSpacing: 1 },
   deleteCircle: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(122, 75, 50, 0.1)', alignItems: 'center', justifyContent: 'center' },
-  goalTitle: { fontSize: 20, fontWeight: '800', color: '#463A31', marginBottom: 16, textTransform: 'lowercase' },
+  goalTitle: { fontSize: 20, fontWeight: '800', color: '#211A3A', marginBottom: 16, textTransform: 'lowercase' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 },
   taskCount: { fontSize: 12, color: '#918476', fontWeight: '600' },
   percentageText: { fontSize: 14, fontWeight: '900' },
-  progressBarBg: { height: 4, backgroundColor: '#E9DECF', borderRadius: 2, overflow: 'hidden' },
+  progressBarBg: { height: 4, backgroundColor: '#F0ECFF', borderRadius: 2, overflow: 'hidden' },
   progressBarFill: { height: '100%' },
   emptyState: { alignItems: 'center', marginTop: 60 },
   emptyStateBuddy: { width: 140, height: 140, marginBottom: 20 },
-  emptyStateTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', textTransform: 'lowercase' },
-  emptyStateText: { color: 'rgba(255,255,255,0.6)', marginTop: 8, marginBottom: 30 },
+  emptyStateTitle: { fontSize: 22, fontWeight: '900', color: '#211A3A', textTransform: 'lowercase' },
+  emptyStateText: { color: 'rgba(255,255,255,0.68)', marginTop: 8, marginBottom: 30 },
   emptyStateBtn: { paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, borderWidth: 2 },
   emptyStateBtnText: { fontWeight: '800', textTransform: 'lowercase' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalCard: { backgroundColor: '#F9F6F1', padding: 25, borderRadius: 20, width: '85%', maxWidth: 320 },
-  modalTitle: { fontSize: 20, fontWeight: '900', color: '#463A31', marginBottom: 8, textTransform: 'lowercase' },
-  modalText: { fontSize: 14, color: '#7B6B5D', marginBottom: 24 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#211A3A', marginBottom: 8, textTransform: 'lowercase' },
+  modalText: { fontSize: 14, color: '#77718C', marginBottom: 24 },
   modalActions: { flexDirection: 'row', gap: 10 },
   modalCancel: { flex: 1, padding: 14, alignItems: 'center' },
   modalConfirm: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
-  cancelText: { fontWeight: '700', color: '#7B6B5D' },
-  confirmText: { fontWeight: '800', color: '#FFF' },
+  cancelText: { fontWeight: '700', color: '#77718C' },
+  confirmText: { fontWeight: '800', color: '#211A3A' },
 });
