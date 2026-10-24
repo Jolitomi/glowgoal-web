@@ -15,12 +15,22 @@ import { db } from './firebase';
 import { getGuestGoals, saveGuestGoals } from './guest-storage';
 import { syncGuestDataToAccount } from './sync-manager';
 
+export type GoalSyncStatus = 'synced' | 'pending' | 'attention';
+
+export type ConflictResolution = {
+  resolvedAt: string;
+  description: string;
+  conflictedTaskTitles: string[];
+};
+
 export type GoalTask = {
   id: string;
   title: string;
   completed: boolean;
   completedAt?: string | null;
   source: 'ai' | 'user';
+  conflictNote?: string | null;
+  isConflictCopy?: boolean;
 };
 
 export type GoalItem = {
@@ -32,6 +42,9 @@ export type GoalItem = {
   createdAt: string;
   progress: number;
   tasks: GoalTask[];
+  syncStatus?: GoalSyncStatus;
+  syncError?: string | null;
+  conflictResolution?: ConflictResolution | null;
 };
 
 export type DeadlineUrgency = 'none' | 'low' | 'medium' | 'high' | 'overdue';
@@ -50,33 +63,63 @@ export function calculateProgress(tasks: GoalTask[]) {
   return tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 }
 
+export function determineGoalSyncStatus(goal: Partial<GoalItem>, isGuestOrigin: boolean): GoalSyncStatus {
+  if (isGuestOrigin) {
+    return goal.syncError ? 'attention' : 'pending';
+  }
+  if (goal.conflictResolution || goal.syncError || goal.syncStatus === 'attention') {
+    return 'attention';
+  }
+  return goal.syncStatus || 'synced';
+}
+
 export async function getGoals(): Promise<GoalItem[]> {
   const userId = getCurrentUserId();
   if (!userId) {
-    return getGuestGoals();
+    const guestGoals = await getGuestGoals();
+    return guestGoals.map((g) => ({
+      ...g,
+      syncStatus: determineGoalSyncStatus(g, true),
+    }));
   }
 
   try {
     const goalsRef = collection(db, 'users', userId, 'goals');
     const goalsQuery = query(goalsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(goalsQuery);
-    const firestoreGoals = snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+    const firestoreGoals = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data() as GoalItem;
+      return {
+        ...data,
+        id: docSnap.id,
+        syncStatus: determineGoalSyncStatus(data, false),
+      };
+    });
 
     // If there are pending guest goals, merge them seamlessly to prevent disappearing goals
     const pendingGuest = await getGuestGoals();
     if (pendingGuest.length > 0) {
       const existingIds = new Set(firestoreGoals.map((g) => g.id));
       const existingTitles = new Set(firestoreGoals.map((g) => g.title.trim().toLowerCase()));
-      const unmerged = pendingGuest.filter(
-        (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
-      );
+      const unmerged = pendingGuest
+        .filter(
+          (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
+        )
+        .map((g) => ({
+          ...g,
+          syncStatus: determineGoalSyncStatus(g, true),
+        }));
       return [...unmerged, ...firestoreGoals];
     }
 
     return firestoreGoals;
   } catch (error) {
     console.warn('Failed to fetch from Firestore, falling back to guest goals:', error);
-    return getGuestGoals();
+    const fallback = await getGuestGoals();
+    return fallback.map((g) => ({
+      ...g,
+      syncStatus: determineGoalSyncStatus(g, true),
+    }));
   }
 }
 
@@ -84,7 +127,8 @@ export async function getGoalById(goalId: string): Promise<GoalItem | null> {
   const userId = getCurrentUserId();
   if (!userId) {
     const goals = await getGuestGoals();
-    return goals.find((g) => g.id === goalId) ?? null;
+    const match = goals.find((g) => g.id === goalId);
+    return match ? { ...match, syncStatus: determineGoalSyncStatus(match, true) } : null;
   }
 
   const goalRef = doc(db, 'users', userId, 'goals', goalId);
@@ -93,9 +137,16 @@ export async function getGoalById(goalId: string): Promise<GoalItem | null> {
   if (!snapshot.exists()) {
     // Check if it's currently an un-synced guest goal
     const guestGoals = await getGuestGoals();
-    return guestGoals.find((g) => g.id === goalId) ?? null;
+    const guestMatch = guestGoals.find((g) => g.id === goalId);
+    return guestMatch ? { ...guestMatch, syncStatus: determineGoalSyncStatus(guestMatch, true) } : null;
   }
-  return snapshot.data() as GoalItem;
+
+  const data = snapshot.data() as GoalItem;
+  return {
+    ...data,
+    id: snapshot.id,
+    syncStatus: determineGoalSyncStatus(data, false),
+  };
 }
 
 export function subscribeToGoals(
@@ -105,7 +156,13 @@ export function subscribeToGoals(
   const userId = getCurrentUserId();
 
   if (!userId) {
-    getGuestGoals().then(onGoalsChange).catch(() => onGoalsChange([]));
+    getGuestGoals()
+      .then((gList) =>
+        onGoalsChange(
+          gList.map((g) => ({ ...g, syncStatus: determineGoalSyncStatus(g, true) }))
+        )
+      )
+      .catch(() => onGoalsChange([]));
     return () => {};
   }
 
@@ -115,15 +172,28 @@ export function subscribeToGoals(
   return onSnapshot(
     goalsQuery,
     async (snapshot) => {
-      const cloudGoals = snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+      const cloudGoals = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data() as GoalItem;
+        return {
+          ...data,
+          id: docSnap.id,
+          syncStatus: determineGoalSyncStatus(data, false),
+        };
+      });
+
       // Seamlessly combine with any pending guest goals
       const pendingGuest = await getGuestGoals();
       if (pendingGuest.length > 0) {
         const existingIds = new Set(cloudGoals.map((g) => g.id));
         const existingTitles = new Set(cloudGoals.map((g) => g.title.trim().toLowerCase()));
-        const unmerged = pendingGuest.filter(
-          (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
-        );
+        const unmerged = pendingGuest
+          .filter(
+            (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
+          )
+          .map((g) => ({
+            ...g,
+            syncStatus: determineGoalSyncStatus(g, true),
+          }));
         onGoalsChange([...unmerged, ...cloudGoals]);
       } else {
         onGoalsChange(cloudGoals);
@@ -140,19 +210,27 @@ export async function saveGoal(goal: GoalItem): Promise<GoalItem> {
   const userId = getCurrentUserId();
   if (!userId) {
     const goals = await getGuestGoals();
+    const goalToSave: GoalItem = {
+      ...goal,
+      syncStatus: 'pending',
+    };
     const existingIndex = goals.findIndex((g) => g.id === goal.id);
     if (existingIndex >= 0) {
-      goals[existingIndex] = goal;
+      goals[existingIndex] = goalToSave;
     } else {
-      goals.unshift(goal);
+      goals.unshift(goalToSave);
     }
     await saveGuestGoals(goals);
-    return goal;
+    return goalToSave;
   }
 
   const goalRef = doc(db, 'users', userId, 'goals', goal.id);
-  await setDoc(goalRef, goal, { merge: true });
-  return goal;
+  const goalToSave: GoalItem = {
+    ...goal,
+    syncStatus: goal.syncStatus || 'synced',
+  };
+  await setDoc(goalRef, goalToSave, { merge: true });
+  return goalToSave;
 }
 
 export async function addGoal(goal: GoalItem) {
@@ -182,7 +260,11 @@ export async function updateGoal(goalId: string, updates: Partial<GoalItem>): Pr
   const userId = getCurrentUserId();
   if (!userId) {
     const goals = await getGuestGoals();
-    const nextGoals = goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+    const nextGoals = goals.map((g) =>
+      g.id === goalId
+        ? { ...g, ...updates, syncStatus: 'pending' as GoalSyncStatus }
+        : g
+    );
     await saveGuestGoals(nextGoals);
     return nextGoals.find((g) => g.id === goalId) ?? null;
   }
@@ -190,6 +272,14 @@ export async function updateGoal(goalId: string, updates: Partial<GoalItem>): Pr
   const goalRef = doc(db, 'users', userId, 'goals', goalId);
   await updateDoc(goalRef, updates);
   return getGoalById(goalId);
+}
+
+export async function dismissGoalConflict(goalId: string): Promise<GoalItem | null> {
+  return updateGoal(goalId, {
+    syncStatus: 'synced',
+    conflictResolution: null,
+    syncError: null,
+  });
 }
 
 export async function toggleTask(goalId: string, taskId: string): Promise<GoalItem | null> {
@@ -218,7 +308,11 @@ export async function toggleTask(goalId: string, taskId: string): Promise<GoalIt
   const userId = getCurrentUserId();
   if (!userId) {
     const goals = await getGuestGoals();
-    const nextGoals = goals.map((g) => (g.id === goalId ? updatedGoal : g));
+    const nextGoals = goals.map((g) =>
+      g.id === goalId
+        ? { ...updatedGoal, syncStatus: 'pending' as GoalSyncStatus }
+        : g
+    );
     await saveGuestGoals(nextGoals);
     return updatedGoal;
   }

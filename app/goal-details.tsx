@@ -25,6 +25,7 @@ import {
   regenerateSingleGoalStep,
 } from '../lib/goal-ai-generator';
 import {
+  dismissGoalConflict,
   getGoalById,
   getGoals,
   GoalItem,
@@ -68,6 +69,22 @@ export default function GoalDetailsScreen() {
   const [newTask, setNewTask] = useState('');
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [regeneratingTaskId, setRegeneratingTaskId] = useState<string | null>(null);
+  const [isDismissingConflict, setIsDismissingConflict] = useState(false);
+
+  const handleDismissConflict = async () => {
+    if (!goal) return;
+    setIsDismissingConflict(true);
+    try {
+      const updated = await dismissGoalConflict(goal.id);
+      if (updated) {
+        setGoal(updated);
+      }
+    } catch (err) {
+      console.warn('Failed to dismiss conflict:', err);
+    } finally {
+      setIsDismissingConflict(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     const found = await getGoalById(goalId);
@@ -482,8 +499,28 @@ export default function GoalDetailsScreen() {
               <View style={styles.goalHeaderRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.goalTitle}>{goal.title}</Text>
-                  <View style={styles.categoryChip}>
-                    <Text style={styles.categoryText}>{goal.category}</Text>
+                  <View style={styles.tagsRow}>
+                    <View style={styles.categoryChip}>
+                      <Text style={styles.categoryText}>{goal.category}</Text>
+                    </View>
+                    {goal.syncStatus === 'pending' && (
+                      <View style={styles.syncBadgePending}>
+                        <Ionicons name="cloud-upload-outline" size={11} color="#B45309" />
+                        <Text style={styles.syncBadgePendingText}>Saved Locally (Pending Sync)</Text>
+                      </View>
+                    )}
+                    {goal.syncStatus === 'attention' && (
+                      <View style={styles.syncBadgeAttention}>
+                        <Ionicons name="alert-circle" size={11} color="#B91C1C" />
+                        <Text style={styles.syncBadgeAttentionText}>Needs Attention</Text>
+                      </View>
+                    )}
+                    {goal.syncStatus === 'synced' && (
+                      <View style={styles.syncBadgeSynced}>
+                        <Ionicons name="cloud-done-outline" size={11} color="#15803D" />
+                        <Text style={styles.syncBadgeSyncedText}>Synced to Cloud</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -493,6 +530,36 @@ export default function GoalDetailsScreen() {
                   </Text>
                 </View>
               </View>
+
+              {!!goal.conflictResolution && (
+                <View style={styles.conflictBanner}>
+                  <View style={styles.conflictBannerHeader}>
+                    <View style={styles.conflictIconWrap}>
+                      <Ionicons name="git-merge-outline" size={20} color="#9A3412" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.conflictBannerTitle}>Task Conflict Resolved</Text>
+                      <Text style={styles.conflictBannerDesc}>
+                        {goal.conflictResolution.description}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.conflictBannerFooter}>
+                    <Text style={styles.conflictBannerHint}>
+                      Both versions are preserved below so no work was lost. You can keep or edit either step anytime.
+                    </Text>
+                    <Pressable
+                      style={[styles.conflictDismissBtn, isDismissingConflict && styles.btnDisabled]}
+                      onPress={handleDismissConflict}
+                      disabled={isDismissingConflict}
+                    >
+                      <Text style={styles.conflictDismissText}>
+                        {isDismissingConflict ? 'Updating...' : 'Got it (Dismiss)'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
 
               {!!goal.deadline && <Text style={styles.goalMetaText}>deadline: {goal.deadline}</Text>}
               {!!goal.reason && <Text style={styles.goalMetaText}>why: {goal.reason}</Text>}
@@ -611,9 +678,19 @@ export default function GoalDetailsScreen() {
                           <Text style={[styles.taskText, task.completed && styles.taskTextDone]}>
                             {task.title}
                           </Text>
-                          <Text style={styles.taskTypeText}>
-                            {task.source === 'ai' ? 'AI step' : 'Your step'}
-                          </Text>
+                          <View style={styles.taskMetaRow}>
+                            <Text style={styles.taskTypeText}>
+                              {task.source === 'ai' ? 'AI step' : 'Your step'}
+                            </Text>
+                            {!!task.conflictNote && (
+                              <View style={[styles.conflictTaskChip, task.isConflictCopy && styles.conflictGuestChip]}>
+                                <Ionicons name="git-branch-outline" size={10} color={task.isConflictCopy ? '#B45309' : '#15803D'} />
+                                <Text style={[styles.conflictTaskChipText, task.isConflictCopy && styles.conflictGuestChipText]}>
+                                  {task.conflictNote}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
                       </Pressable>
                     ) : (
@@ -628,6 +705,13 @@ export default function GoalDetailsScreen() {
                             <Text style={styles.taskTypeText}>
                               {task.source === 'ai' ? 'AI step' : 'Your step'}
                             </Text>
+                            {!!task.conflictNote && (
+                              <View style={[styles.conflictTaskChip, task.isConflictCopy && styles.conflictGuestChip]}>
+                                <Text style={[styles.conflictTaskChipText, task.isConflictCopy && styles.conflictGuestChipText]}>
+                                  {task.conflictNote}
+                                </Text>
+                              </View>
+                            )}
                           </View>
 
                           <Pressable
@@ -1140,5 +1224,145 @@ const styles = StyleSheet.create({
     color: '#FFF7EF',
     fontWeight: '900',
     textTransform: 'lowercase',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+    flexWrap: 'wrap',
+  },
+  syncBadgeSynced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgeSyncedText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  syncBadgePending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgePendingText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B45309',
+  },
+  syncBadgeAttention: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgeAttentionText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B91C1C',
+  },
+  conflictBanner: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
+    borderColor: '#FDBA74',
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 14,
+  },
+  conflictBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  conflictIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFEDD5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  conflictBannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#7C2D12',
+    marginBottom: 2,
+  },
+  conflictBannerDesc: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#9A3412',
+    fontWeight: '500',
+  },
+  conflictBannerFooter: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#FED7AA',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  conflictBannerHint: {
+    fontSize: 11,
+    color: '#C2410C',
+    flex: 1,
+    minWidth: 180,
+  },
+  conflictDismissBtn: {
+    backgroundColor: '#EA580C',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  conflictDismissText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  taskMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 3,
+    flexWrap: 'wrap',
+  },
+  conflictTaskChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  conflictGuestChip: {
+    backgroundColor: '#FEF3C7',
+  },
+  conflictTaskChipText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  conflictGuestChipText: {
+    color: '#B45309',
   },
 });

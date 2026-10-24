@@ -174,3 +174,15 @@ export function subscribeToSyncState(listener: (state: SyncState) => void): () =
     syncStateListeners.delete(listener);
   };
 }
+
+export async function updateGuestGoal(goalId: string, updates: Partial<GoalItem>): Promise<GoalItem[]> {
+  try {
+    const goals = await getGuestGoals();
+    const updated = goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+    await saveGuestGoals(updated);
+    return updated;
+  } catch (error) {
+    console.error('Failed to update guest goal:', error);
+    return [];
+  }
+}

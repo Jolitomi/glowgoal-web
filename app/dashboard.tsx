@@ -580,10 +580,31 @@ export default function DashboardScreen() {
                         }
                       >
                         <View style={styles.goalTopRow}>
-                          <View style={styles.goalCategoryPill}>
-                            <Text style={styles.goalCategoryText}>
-                              {goal.category}
-                            </Text>
+                          <View style={styles.goalTagsRow}>
+                            <View style={styles.goalCategoryPill}>
+                              <Text style={styles.goalCategoryText}>
+                                {goal.category}
+                              </Text>
+                            </View>
+
+                            {goal.syncStatus === 'pending' && (
+                              <View style={styles.syncBadgePending}>
+                                <Ionicons name="cloud-upload-outline" size={11} color="#B45309" />
+                                <Text style={styles.syncBadgePendingText}>Pending Sync</Text>
+                              </View>
+                            )}
+                            {goal.syncStatus === 'attention' && (
+                              <View style={styles.syncBadgeAttention}>
+                                <Ionicons name="alert-circle" size={11} color="#B91C1C" />
+                                <Text style={styles.syncBadgeAttentionText}>Needs Attention</Text>
+                              </View>
+                            )}
+                            {goal.syncStatus === 'synced' && (
+                              <View style={styles.syncBadgeSynced}>
+                                <Ionicons name="cloud-done-outline" size={11} color="#15803D" />
+                                <Text style={styles.syncBadgeSyncedText}>Synced</Text>
+                              </View>
+                            )}
                           </View>
 
                           <Pressable
@@ -601,6 +622,15 @@ export default function DashboardScreen() {
                             />
                           </Pressable>
                         </View>
+
+                        {!!goal.conflictResolution && (
+                          <View style={styles.goalConflictNotice}>
+                            <Ionicons name="git-merge-outline" size={12} color="#9A3412" />
+                            <Text style={styles.goalConflictNoticeText} numberOfLines={2}>
+                              Task conflict resolved: preserved both versions
+                            </Text>
+                          </View>
+                        )}
 
                         <Text style={styles.goalCardTitle} numberOfLines={2}>
                           {goal.title}
@@ -1263,5 +1293,71 @@ const styles = StyleSheet.create({
     color: '#15803D',
     fontSize: 13,
     fontWeight: '800',
+  },
+  goalTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  syncBadgeSynced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgeSyncedText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  syncBadgePending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgePendingText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B45309',
+  },
+  syncBadgeAttention: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  syncBadgeAttentionText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#B91C1C',
+  },
+  goalConflictNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFEDD5',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  goalConflictNoticeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#9A3412',
+    flex: 1,
   },
 });

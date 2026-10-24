@@ -145,11 +145,39 @@ export default function GoalsScreen() {
                         onPress={() => router.push({ pathname: '/goal-details', params: { goalId: goal.id } })}
                       >
                         <View style={styles.cardHeader}>
-                          <Text style={styles.categoryLabel}>{goal.category}</Text>
+                          <View style={styles.headerLeft}>
+                            <Text style={styles.categoryLabel}>{goal.category}</Text>
+                            {goal.syncStatus === 'pending' && (
+                              <View style={styles.syncBadgePending}>
+                                <Ionicons name="cloud-upload-outline" size={10} color="#B45309" />
+                                <Text style={styles.syncBadgePendingText}>Pending</Text>
+                              </View>
+                            )}
+                            {goal.syncStatus === 'attention' && (
+                              <View style={styles.syncBadgeAttention}>
+                                <Ionicons name="alert-circle" size={10} color="#B91C1C" />
+                                <Text style={styles.syncBadgeAttentionText}>Attention</Text>
+                              </View>
+                            )}
+                            {goal.syncStatus === 'synced' && (
+                              <View style={styles.syncBadgeSynced}>
+                                <Ionicons name="cloud-done-outline" size={10} color="#15803D" />
+                                <Text style={styles.syncBadgeSyncedText}>Synced</Text>
+                              </View>
+                            )}
+                          </View>
                           <Pressable onPress={(e) => { e.stopPropagation(); handleDeleteGoal(goal); }} style={styles.deleteCircle}>
                             <Ionicons name="close" size={14} color="#7A4B32" />
                           </Pressable>
                         </View>
+                        {!!goal.conflictResolution && (
+                          <View style={styles.goalConflictNotice}>
+                            <Ionicons name="git-merge-outline" size={12} color="#9A3412" />
+                            <Text style={styles.goalConflictNoticeText} numberOfLines={2}>
+                              Task conflict resolved: preserved both versions
+                            </Text>
+                          </View>
+                        )}
                         <Text style={styles.goalTitle}>{goal.title}</Text>
                         <View style={styles.cardFooter}>
                           <Text style={styles.taskCount}>{completed} / {goal.tasks.length} tasks</Text>
@@ -235,6 +263,15 @@ const styles = StyleSheet.create({
   goalsList: { gap: 16 },
   goalCard: { backgroundColor: '#F9F6F1', borderRadius: 24, padding: 20 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 },
+  syncBadgeSynced: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  syncBadgeSyncedText: { fontSize: 9, fontWeight: '800', color: '#15803D' },
+  syncBadgePending: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  syncBadgePendingText: { fontSize: 9, fontWeight: '800', color: '#B45309' },
+  syncBadgeAttention: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#FEE2E2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  syncBadgeAttentionText: { fontSize: 9, fontWeight: '800', color: '#B91C1C' },
+  goalConflictNotice: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFEDD5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginBottom: 10 },
+  goalConflictNoticeText: { fontSize: 11, fontWeight: '700', color: '#9A3412', flex: 1 },
   categoryLabel: { fontSize: 10, fontWeight: '800', color: '#B6AB9F', textTransform: 'uppercase', letterSpacing: 1 },
   deleteCircle: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(122, 75, 50, 0.1)', alignItems: 'center', justifyContent: 'center' },
   goalTitle: { fontSize: 20, fontWeight: '800', color: '#463A31', marginBottom: 16, textTransform: 'lowercase' },

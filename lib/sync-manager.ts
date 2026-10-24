@@ -7,7 +7,13 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { calculateProgress, GoalItem } from './goals';
+import {
+  calculateProgress,
+  ConflictResolution,
+  GoalItem,
+  GoalTask,
+  makeId,
+} from './goals';
 import {
   clearGuestData,
   clearGuestPreferences,
@@ -19,6 +25,7 @@ import {
   SyncReport,
   SyncState,
   SyncStatus,
+  updateGuestGoal,
 } from './guest-storage';
 import { UserPreferences } from './preferences';
 
@@ -122,7 +129,7 @@ async function performSync(): Promise<SyncReport> {
   let lastError: string | null = null;
   let prefsSuccess = false;
 
-  // 1. Sync & Merge Goals with Duplicate Prevention
+  // 1. Sync & Merge Goals with Conflict Detection & Preservation
   if (initialGuestGoals.length > 0) {
     let existingGoals: GoalItem[] = [];
     try {
@@ -155,29 +162,84 @@ async function performSync(): Promise<SyncReport> {
           const match = exactIdMatch || semanticMatch;
 
           if (match) {
-            // Merge tasks non-destructively to avoid duplicates while preserving guest completions
-            const mergedTasks = [...(match.tasks || [])];
+            // Merge tasks non-destructively: detect conflicts, preserve both versions, and record resolution
+            const mergedTasks: GoalTask[] = [...(match.tasks || [])];
+            const conflictedTitles: string[] = [];
 
             for (const guestTask of guestGoal.tasks || []) {
-              const existingTaskIdx = mergedTasks.findIndex(
+              const existingByIdIdx = mergedTasks.findIndex((t) => t.id === guestTask.id);
+              const existingByTitleIdx = mergedTasks.findIndex(
                 (t) => normalize(t.title) === normalize(guestTask.title)
               );
+              const matchIdx = existingByIdIdx >= 0 ? existingByIdIdx : existingByTitleIdx;
 
-              if (existingTaskIdx >= 0) {
-                if (guestTask.completed && !mergedTasks[existingTaskIdx].completed) {
-                  mergedTasks[existingTaskIdx] = {
-                    ...mergedTasks[existingTaskIdx],
-                    completed: true,
-                    completedAt: guestTask.completedAt || new Date().toISOString(),
+              if (matchIdx >= 0) {
+                const existingTask = mergedTasks[matchIdx];
+                const titlesDiffer = normalize(existingTask.title) !== normalize(guestTask.title);
+
+                // Detect true conflicting edits:
+                // 1) Titles differ on the same task ID
+                // 2) Disagreeing completion status where both had edits (e.g. cloud completed, guest uncompleted)
+                // 3) Both marked completed with different timestamps
+                const hasConflict =
+                  (titlesDiffer && existingByIdIdx >= 0) ||
+                  (existingTask.completed !== guestTask.completed && existingTask.completed && !guestTask.completed) ||
+                  (existingTask.completed &&
+                    guestTask.completed &&
+                    Boolean(existingTask.completedAt) &&
+                    Boolean(guestTask.completedAt) &&
+                    existingTask.completedAt !== guestTask.completedAt);
+
+                if (hasConflict) {
+                  conflictedTitles.push(guestTask.title);
+
+                  // 1. Preserve cloud version with an annotation
+                  mergedTasks[matchIdx] = {
+                    ...existingTask,
+                    conflictNote: existingTask.conflictNote || 'Account version (preserved)',
                   };
+
+                  // 2. Preserve guest version alongside it
+                  mergedTasks.push({
+                    id: makeId('task_guest_conflict'),
+                    title: titlesDiffer
+                      ? `${guestTask.title} (Guest edit)`
+                      : `${guestTask.title} (Guest version)`,
+                    completed: guestTask.completed,
+                    completedAt: guestTask.completedAt || null,
+                    source: guestTask.source || 'user',
+                    isConflictCopy: true,
+                    conflictNote: 'Preserved from guest session conflict',
+                  });
+                } else {
+                  // Clean forward: guest completed an uncompleted cloud task
+                  if (guestTask.completed && !existingTask.completed) {
+                    mergedTasks[matchIdx] = {
+                      ...existingTask,
+                      completed: true,
+                      completedAt: guestTask.completedAt || new Date().toISOString(),
+                    };
+                  }
                 }
               } else {
+                // New task introduced in guest session, append safely
                 mergedTasks.push(guestTask);
               }
             }
 
             const mergedProgress = calculateProgress(mergedTasks);
             const targetDocRef = doc(db, 'users', userId, 'goals', match.id);
+
+            const hasNewConflict = conflictedTitles.length > 0;
+            const conflictResolution: ConflictResolution | null = hasNewConflict
+              ? {
+                  resolvedAt: new Date().toISOString(),
+                  description: `Preserved both versions for conflicting tasks (${conflictedTitles.join(
+                    ', '
+                  )}). Both your account and guest versions remain in your checklist so no edits were lost.`,
+                  conflictedTaskTitles: conflictedTitles,
+                }
+              : match.conflictResolution || null;
 
             await setDoc(
               targetDocRef,
@@ -187,25 +249,41 @@ async function performSync(): Promise<SyncReport> {
                 progress: mergedProgress,
                 reason: match.reason || guestGoal.reason || '',
                 deadline: match.deadline || guestGoal.deadline || '',
+                syncStatus: hasNewConflict ? 'attention' : match.syncStatus || 'synced',
+                conflictResolution,
               },
               { merge: true }
             );
 
             mergedCount++;
           } else {
-            // Upload new goal document
+            // Upload new goal document with synced status
             const goalDocRef = doc(db, 'users', userId, 'goals', guestGoal.id);
-            await setDoc(goalDocRef, guestGoal, { merge: true });
+            await setDoc(
+              goalDocRef,
+              {
+                ...guestGoal,
+                syncStatus: 'synced',
+                syncError: null,
+                conflictResolution: null,
+              },
+              { merge: true }
+            );
             syncedCount++;
           }
 
-          // Atomically remove synced goal from local storage so it cannot be synced again
+          // Atomically remove synced goal from local storage so it cannot be re-synced
           await removeGuestGoal(guestGoal.id);
         });
       } catch (goalErr: any) {
         console.error(`Failed to sync guest goal "${guestGoal.title}":`, goalErr);
         failedCount++;
         lastError = goalErr?.message || 'Goal sync failed';
+        // Tag this local goal with syncError so it displays as 'attention' in UI
+        await updateGuestGoal(guestGoal.id, {
+          syncStatus: 'attention',
+          syncError: lastError,
+        });
       }
     }
   }
