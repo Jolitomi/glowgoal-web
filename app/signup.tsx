@@ -67,110 +67,107 @@ export default function SignUpScreen() {
       selectAccount: true,
     });
 
-  // Unified completion flow for Sign Up
+  // Unified completion flow for Sign Up with duplicate prevention & retry safeguards
   const finalizeSignUp = async (user: any) => {
-  try {
-    // 1. Email + reminder setup (DO THIS FIRST)
-    await scheduleDailyReminders(user.uid, 'hype');
-
-    // 2. Push registration (properly awaited)
-    let token = null;
-
     try {
-      token = await registerForPushNotificationsAsync();
-    } catch (err) {
-      console.warn('Push registration failed:', err);
-    }
+      // 1. Email + reminder setup
+      await scheduleDailyReminders(user.uid, 'hype');
 
-    // 3. Firestore setup (must not fail silently)
-    try {
-      const { doc, setDoc, getDoc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../lib/firebase');
-
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-
-      const userData = {
-        email: user.email,
-        name: user.displayName || name,
-        pushToken: token || null,
-        lastLogin: new Date(),
-      };
-
-      if (userSnap.exists()) {
-        await updateDoc(userRef, userData);
-      } else {
-        await setDoc(userRef, {
-          ...userData,
-          createdAt: new Date(),
-        });
-      }
-    } catch (dbError) {
-      console.error('Firestore setup failed:', dbError);
-    }
-
-    // 3.5 Sync guest data to Firestore
-    try {
-      const { syncGuestGoalsToFirebase } = await import('../lib/goals');
-      const { syncGuestPreferencesToFirebase } = await import('../lib/preferences');
-      await syncGuestGoalsToFirebase();
-      await syncGuestPreferencesToFirebase();
-    } catch (syncErr) {
-      console.warn('Guest data sync deferred:', syncErr);
-    }
-
-    // 4. Animations (non-blocking)
-    triggerSuccessBurst();
-    triggerVictoryJump();
-
-    // 5. Navigation (redirect to dashboard if goal/buddy already chosen)
-    setTimeout(async () => {
+      // 2. Push registration
+      let token = null;
       try {
-        const { getGoals } = await import('../lib/goals');
-        const goals = await getGoals();
-        if (goals.length > 0) {
-          router.replace('/dashboard');
+        token = await registerForPushNotificationsAsync();
+      } catch (err) {
+        console.warn('Push registration failed:', err);
+      }
+
+      // 3. Firestore user document setup
+      try {
+        const { doc, setDoc, getDoc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        const userData = {
+          email: user.email,
+          name: user.displayName || name,
+          pushToken: token || null,
+          lastLogin: new Date(),
+        };
+
+        if (userSnap.exists()) {
+          await updateDoc(userRef, userData);
         } else {
-          router.replace('/personality');
+          await setDoc(userRef, {
+            ...userData,
+            createdAt: new Date(),
+          });
         }
-      } catch {
-        router.replace('/dashboard');
-      }
-    }, 2200);
-
-  } catch (error) {
-    console.error("Sign up finalization failed:", error);
-    router.replace('/dashboard');
-  }
-};
-
- const handleGoogleSignIn = async () => {
-  setGoogleLoading(true);
-
-  try {
-    if (Platform.OS === 'web') {
-      const provider = new GoogleAuthProvider();
-
-      const result = await signInWithPopup(auth, provider);
-
-      if (result.user) {
-        await finalizeSignUp(result.user);
+      } catch (dbError) {
+        console.error('Firestore setup failed:', dbError);
       }
 
-      setGoogleLoading(false);
-      return;
+      // 3.5 Sync guest data to Firestore with duplicate prevention & retry handling
+      try {
+        const { syncGuestDataToAccount } = await import('../lib/sync-manager');
+        const syncResult = await syncGuestDataToAccount();
+        console.log('Guest-to-account sync finished with result:', syncResult);
+      } catch (syncErr) {
+        console.warn('Guest data sync deferred to background retry:', syncErr);
+      }
+
+      // 4. Animations (non-blocking)
+      triggerSuccessBurst();
+      triggerVictoryJump();
+
+      // 5. Navigation (redirect to dashboard if goal/buddy already chosen)
+      setTimeout(async () => {
+        try {
+          const { getGoals } = await import('../lib/goals');
+          const goals = await getGoals();
+          if (goals.length > 0) {
+            router.replace('/dashboard');
+          } else {
+            router.replace('/personality');
+          }
+        } catch {
+          router.replace('/dashboard');
+        }
+      }, 2200);
+
+    } catch (error) {
+      console.error("Sign up finalization failed:", error);
+      router.replace('/dashboard');
     }
+  };
 
-    // MOBILE (Expo Auth Session flow)
-    promptGoogleSignIn();
-  } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : 'Google sign-in failed';
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
 
-    Alert.alert('Login Error', message);
-    setGoogleLoading(false);
-  }
-};
+    try {
+      if (Platform.OS === 'web') {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+
+        if (result.user) {
+          await finalizeSignUp(result.user);
+        }
+
+        setGoogleLoading(false);
+        return;
+      }
+
+      // MOBILE (Expo Auth Session flow)
+      promptGoogleSignIn();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Google sign-in failed';
+
+      Alert.alert('Login Error', message);
+      setGoogleLoading(false);
+    }
+  };
 
   useEffect(() => {
     Animated.loop(
@@ -231,37 +228,36 @@ export default function SignUpScreen() {
     ]).start();
   };
 
- useEffect(() => {
-  const handleGoogleAuth = async () => {
-    if (googleResponse?.type !== 'success') return;
+  useEffect(() => {
+    const handleGoogleAuth = async () => {
+      if (googleResponse?.type !== 'success') return;
 
-    try {
-      setGoogleLoading(true);
+      try {
+        setGoogleLoading(true);
 
-      const idToken =
-        googleResponse.authentication?.idToken ||
-        googleResponse.params?.id_token;
+        const idToken =
+          googleResponse.authentication?.idToken ||
+          googleResponse.params?.id_token;
 
-      if (!idToken) {
-        throw new Error('Missing Google ID token');
+        if (!idToken) {
+          throw new Error('Missing Google ID token');
+        }
+
+        const credential = GoogleAuthProvider.credential(idToken);
+        const result = await signInWithCredential(auth, credential);
+
+        await finalizeSignUp(result.user);
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Google sign-in failed';
+
+        Alert.alert('Firebase Error', message);
+        setGoogleLoading(false);
       }
+    };
 
-      const credential = GoogleAuthProvider.credential(idToken);
-
-      const result = await signInWithCredential(auth, credential);
-
-      await finalizeSignUp(result.user);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Google sign-in failed';
-
-      Alert.alert('Firebase Error', message);
-      setGoogleLoading(false);
-    }
-  };
-
-  handleGoogleAuth();
-}, [googleResponse]);
+    handleGoogleAuth();
+  }, [googleResponse]);
 
   const handleEmailSignUp = async () => {
     if (!name || !email || password.length < 6) {

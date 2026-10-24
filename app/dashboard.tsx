@@ -3,9 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; // Added for the sync logic
+import { doc, setDoc } from 'firebase/firestore';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Easing,
   Image,
@@ -21,7 +22,7 @@ import {
   View,
 } from 'react-native';
 import { buddyConfig, BuddyType } from '../lib/buddy';
-import { auth, db } from '../lib/firebase'; // Added db
+import { auth, db } from '../lib/firebase';
 import {
   calculateStreak,
   deleteGoal,
@@ -30,26 +31,35 @@ import {
   subscribeToGoals,
 } from '../lib/goals';
 import {
+  getSyncState,
+  subscribeToSyncState,
+  SyncState,
+} from '../lib/guest-storage';
+import {
   getUserPreferences,
   subscribeToUserPreferences,
 } from '../lib/preferences';
+import {
+  dismissSyncFailure,
+  retrySync,
+  syncGuestDataToAccount,
+} from '../lib/sync-manager';
 import { updateLastAppOpened } from '../lib/user-activity';
 import { resetMissedDays } from '../lib/user-behavior';
 
 type NavTab = 'home' | 'goals' | 'progress' | 'profile';
 
-
 const syncUserEmailToFirestore = async (user: User | null) => {
   if (user && user.email) {
     try {
-      const prefRef = doc(db, "users", user.uid, "profile", "preferences");
+      const prefRef = doc(db, 'users', user.uid, 'profile', 'preferences');
       await setDoc(prefRef, {
         email: user.email,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       }, { merge: true });
-      console.log("✅ Background Sync: Email secured for cloud scheduler.");
+      console.log('✅ Background Sync: Email secured for cloud scheduler.');
     } catch (error) {
-      console.log("❌ Background Sync Failed:", error);
+      console.log('❌ Background Sync Failed:', error);
     }
   }
 };
@@ -64,6 +74,14 @@ export default function DashboardScreen() {
   const [streak, setStreak] = useState(0);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+
+  const [syncState, setSyncState] = useState<SyncState>({
+    status: 'idle',
+    pendingGoalsCount: 0,
+    failedAttempts: 0,
+  });
+  const [isRetryingSync, setIsRetryingSync] = useState(false);
+  const [syncSuccessToast, setSyncSuccessToast] = useState<string | null>(null);
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<GoalItem | null>(null);
@@ -84,6 +102,16 @@ export default function DashboardScreen() {
 
   const previewGoals = useMemo(() => goals.slice(0, 2), [goals]);
 
+  // Subscribe to guest-to-cloud sync status
+  useEffect(() => {
+    const unsubscribeSync = subscribeToSyncState((state) => {
+      setSyncState(state);
+    });
+    return () => {
+      unsubscribeSync();
+    };
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       let isActive = true;
@@ -99,9 +127,23 @@ export default function DashboardScreen() {
 
           if (!isActive) return;
 
-          // Also trigger sync on focus just to be safe for launch
+          // Trigger email sync on focus if user is authenticated
           if (auth.currentUser) {
             await syncUserEmailToFirestore(auth.currentUser);
+
+            // Auto-retry pending guest goals sync in the background
+            const currentSync = await getSyncState();
+            if (currentSync.pendingGoalsCount > 0 && currentSync.status !== 'syncing') {
+              syncGuestDataToAccount()
+                .then(async (report) => {
+                  if (report.status === 'synced' && isActive) {
+                    const refreshedGoals = await getGoals();
+                    setGoals(refreshedGoals);
+                    setStreak(calculateStreak(refreshedGoals));
+                  }
+                })
+                .catch(() => {});
+            }
           }
 
           await scheduleDailyReminders(liveGoals, activeBuddy);
@@ -124,8 +166,7 @@ export default function DashboardScreen() {
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      
-      // Trigger the email sync as soon as auth state is confirmed
+
       if (user) {
         syncUserEmailToFirestore(user);
       }
@@ -254,6 +295,33 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleRetrySync = async () => {
+    setIsRetryingSync(true);
+    try {
+      const report = await retrySync();
+      if (report.status === 'synced') {
+        const count = report.syncedGoalsCount + report.mergedGoalsCount;
+        setSyncSuccessToast(
+          count > 0
+            ? `Synced ${count} goal${count === 1 ? '' : 's'} to your cloud account!`
+            : 'All goals are safely synced!'
+        );
+        setTimeout(() => setSyncSuccessToast(null), 4000);
+        const liveGoals = await getGoals();
+        setGoals(liveGoals);
+        setStreak(calculateStreak(liveGoals));
+      }
+    } catch (err) {
+      console.warn('Manual sync retry failed:', err);
+    } finally {
+      setIsRetryingSync(false);
+    }
+  };
+
+  const handleDismissSync = async () => {
+    await dismissSyncFailure();
+  };
+
   if (!buddy) return null;
   const currentBuddy = buddyConfig[buddy];
 
@@ -337,6 +405,60 @@ export default function DashboardScreen() {
                   >
                     <Text style={styles.guestBannerButtonText}>Sign Up Free</Text>
                   </Pressable>
+                </View>
+              )}
+
+              {/* Sync Recovery Safeguard Banner */}
+              {currentUser && syncState.pendingGoalsCount > 0 && syncState.status === 'failed' && (
+                <View style={styles.syncErrorBanner}>
+                  <View style={styles.syncBannerTop}>
+                    <View style={styles.syncIconWrap}>
+                      <Ionicons name="cloud-offline-outline" size={20} color="#9A3412" />
+                    </View>
+                    <View style={styles.syncBannerTextWrap}>
+                      <Text style={styles.syncBannerTitle}>Cloud Sync Paused</Text>
+                      <Text style={styles.syncBannerSubtitle}>
+                        {syncState.pendingGoalsCount} goal{syncState.pendingGoalsCount === 1 ? '' : 's'} from your guest session couldn't be uploaded yet. Your data is safely saved on this device.
+                      </Text>
+                      {!!syncState.errorMessage && (
+                        <Text style={styles.syncBannerErrorDetail} numberOfLines={2}>
+                          {syncState.errorMessage}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={styles.syncBannerActions}>
+                    <Pressable
+                      style={[styles.syncRetryBtn, isRetryingSync && styles.syncBtnDisabled]}
+                      onPress={handleRetrySync}
+                      disabled={isRetryingSync}
+                    >
+                      {isRetryingSync ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="refresh" size={14} color="#FFFFFF" />
+                          <Text style={styles.syncRetryText}>Retry Sync</Text>
+                        </>
+                      )}
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.syncDismissBtn}
+                      onPress={handleDismissSync}
+                      disabled={isRetryingSync}
+                    >
+                      <Text style={styles.syncDismissText}>Dismiss</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {/* Sync Success Feedback Toast */}
+              {!!syncSuccessToast && (
+                <View style={styles.syncSuccessToast}>
+                  <Ionicons name="checkmark-circle" size={18} color="#15803D" />
+                  <Text style={styles.syncSuccessToastText}>{syncSuccessToast}</Text>
                 </View>
               )}
 
@@ -1044,6 +1166,102 @@ const styles = StyleSheet.create({
   guestBannerButtonText: {
     color: '#FFFFFF',
     fontSize: 12,
+    fontWeight: '800',
+  },
+
+  syncErrorBanner: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
+    borderColor: '#FDBA74',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+  },
+  syncBannerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  syncIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFEDD5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syncBannerTextWrap: {
+    flex: 1,
+  },
+  syncBannerTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#7C2D12',
+    marginBottom: 4,
+  },
+  syncBannerSubtitle: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#9A3412',
+    fontWeight: '500',
+  },
+  syncBannerErrorDetail: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#C2410C',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  syncBannerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 12,
+    paddingLeft: 48,
+  },
+  syncRetryBtn: {
+    backgroundColor: '#EA580C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  syncBtnDisabled: {
+    opacity: 0.6,
+  },
+  syncRetryText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  syncDismissBtn: {
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  syncDismissText: {
+    color: '#7C2D12',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  syncSuccessToast: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.5,
+    borderColor: '#86EFAC',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  syncSuccessToastText: {
+    color: '#15803D',
+    fontSize: 13,
     fontWeight: '800',
   },
 });

@@ -133,6 +133,14 @@ export default function LoginScreen() {
         userExists = true; 
       }
 
+      // 3.5 Sync any guest data with duplicate prevention safeguards
+      try {
+        const { syncGuestDataToAccount } = await import("../lib/sync-manager");
+        await syncGuestDataToAccount();
+      } catch (syncErr) {
+        console.warn("Guest data sync on login deferred:", syncErr);
+      }
+
       // 4. Controlled Navigation
       setTimeout(() => {
         if (!userExists) {

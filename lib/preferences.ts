@@ -9,6 +9,7 @@ import {
 import { BuddyType } from './buddy';
 import { db } from './firebase';
 import { getGuestPreferences, saveGuestPreferences } from './guest-storage';
+import { syncGuestDataToAccount } from './sync-manager';
 
 export type UserPreferences = {
   buddy: BuddyType;
@@ -52,8 +53,13 @@ export async function getUserPreferences(): Promise<UserPreferences> {
     const snapshot = await getDoc(preferencesRef);
 
     if (!snapshot.exists()) {
-      await setDoc(preferencesRef, DEFAULT_PREFERENCES, { merge: true });
-      return DEFAULT_PREFERENCES;
+      const guestPrefs = await getGuestPreferences();
+      const initial = {
+        ...DEFAULT_PREFERENCES,
+        ...(guestPrefs || {}),
+      };
+      await setDoc(preferencesRef, initial, { merge: true });
+      return initial;
     }
 
     const data = snapshot.data() as Partial<UserPreferences>;
@@ -145,14 +151,7 @@ export async function saveExpoPushToken(token: string | null) {
 }
 
 export async function syncGuestPreferencesToFirebase(): Promise<void> {
-  const userId = getCurrentUserId();
-  if (!userId) return;
-
-  const guestPrefs = await getGuestPreferences();
-  if (!guestPrefs) return;
-
-  const preferencesRef = doc(db, 'users', userId, 'profile', 'preferences');
-  await setDoc(preferencesRef, guestPrefs, { merge: true });
+  await syncGuestDataToAccount();
 }
 
 export function subscribeToUserPreferences(

@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getGuestGoals, saveGuestGoals } from './guest-storage';
+import { syncGuestDataToAccount } from './sync-manager';
 
 export type GoalTask = {
   id: string;
@@ -59,7 +60,20 @@ export async function getGoals(): Promise<GoalItem[]> {
     const goalsRef = collection(db, 'users', userId, 'goals');
     const goalsQuery = query(goalsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(goalsQuery);
-    return snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+    const firestoreGoals = snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+
+    // If there are pending guest goals, merge them seamlessly to prevent disappearing goals
+    const pendingGuest = await getGuestGoals();
+    if (pendingGuest.length > 0) {
+      const existingIds = new Set(firestoreGoals.map((g) => g.id));
+      const existingTitles = new Set(firestoreGoals.map((g) => g.title.trim().toLowerCase()));
+      const unmerged = pendingGuest.filter(
+        (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
+      );
+      return [...unmerged, ...firestoreGoals];
+    }
+
+    return firestoreGoals;
   } catch (error) {
     console.warn('Failed to fetch from Firestore, falling back to guest goals:', error);
     return getGuestGoals();
@@ -76,7 +90,11 @@ export async function getGoalById(goalId: string): Promise<GoalItem | null> {
   const goalRef = doc(db, 'users', userId, 'goals', goalId);
   const snapshot = await getDoc(goalRef);
 
-  if (!snapshot.exists()) return null;
+  if (!snapshot.exists()) {
+    // Check if it's currently an un-synced guest goal
+    const guestGoals = await getGuestGoals();
+    return guestGoals.find((g) => g.id === goalId) ?? null;
+  }
   return snapshot.data() as GoalItem;
 }
 
@@ -96,9 +114,20 @@ export function subscribeToGoals(
 
   return onSnapshot(
     goalsQuery,
-    (snapshot) => {
-      const goals = snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
-      onGoalsChange(goals);
+    async (snapshot) => {
+      const cloudGoals = snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+      // Seamlessly combine with any pending guest goals
+      const pendingGuest = await getGuestGoals();
+      if (pendingGuest.length > 0) {
+        const existingIds = new Set(cloudGoals.map((g) => g.id));
+        const existingTitles = new Set(cloudGoals.map((g) => g.title.trim().toLowerCase()));
+        const unmerged = pendingGuest.filter(
+          (g) => !existingIds.has(g.id) && !existingTitles.has(g.title.trim().toLowerCase())
+        );
+        onGoalsChange([...unmerged, ...cloudGoals]);
+      } else {
+        onGoalsChange(cloudGoals);
+      }
     },
     (error) => {
       console.log('Realtime goals listener failed:', error);
@@ -122,7 +151,7 @@ export async function saveGoal(goal: GoalItem): Promise<GoalItem> {
   }
 
   const goalRef = doc(db, 'users', userId, 'goals', goal.id);
-  await setDoc(goalRef, goal);
+  await setDoc(goalRef, goal, { merge: true });
   return goal;
 }
 
@@ -142,6 +171,11 @@ export async function deleteGoal(goalId: string): Promise<void> {
 
   const goalRef = doc(db, 'users', userId, 'goals', goalId);
   await deleteDoc(goalRef);
+  // Also clean up if it was lingering in guest goals
+  const guestGoals = await getGuestGoals();
+  if (guestGoals.some((g) => g.id === goalId)) {
+    await saveGuestGoals(guestGoals.filter((g) => g.id !== goalId));
+  }
 }
 
 export async function updateGoal(goalId: string, updates: Partial<GoalItem>): Promise<GoalItem | null> {
@@ -199,19 +233,8 @@ export async function toggleTask(goalId: string, taskId: string): Promise<GoalIt
 }
 
 export async function syncGuestGoalsToFirebase(): Promise<number> {
-  const userId = getCurrentUserId();
-  if (!userId) return 0;
-
-  const guestGoals = await getGuestGoals();
-  if (!guestGoals.length) return 0;
-
-  for (const goal of guestGoals) {
-    const goalRef = doc(db, 'users', userId, 'goals', goal.id);
-    await setDoc(goalRef, goal, { merge: true });
-  }
-
-  await saveGuestGoals([]);
-  return guestGoals.length;
+  const report = await syncGuestDataToAccount();
+  return report.syncedGoalsCount + report.mergedGoalsCount;
 }
 
 function toDateKey(dateValue: string | Date) {
