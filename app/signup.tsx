@@ -109,18 +109,38 @@ export default function SignUpScreen() {
       console.error('Firestore setup failed:', dbError);
     }
 
+    // 3.5 Sync guest data to Firestore
+    try {
+      const { syncGuestGoalsToFirebase } = await import('../lib/goals');
+      const { syncGuestPreferencesToFirebase } = await import('../lib/preferences');
+      await syncGuestGoalsToFirebase();
+      await syncGuestPreferencesToFirebase();
+    } catch (syncErr) {
+      console.warn('Guest data sync deferred:', syncErr);
+    }
+
     // 4. Animations (non-blocking)
     triggerSuccessBurst();
     triggerVictoryJump();
 
-    // 5. Navigation (keep stable delay)
-    setTimeout(() => {
-      router.replace('/personality');
-    }, 2500);
+    // 5. Navigation (redirect to dashboard if goal/buddy already chosen)
+    setTimeout(async () => {
+      try {
+        const { getGoals } = await import('../lib/goals');
+        const goals = await getGoals();
+        if (goals.length > 0) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/personality');
+        }
+      } catch {
+        router.replace('/dashboard');
+      }
+    }, 2200);
 
   } catch (error) {
     console.error("Sign up finalization failed:", error);
-    router.replace('/personality');
+    router.replace('/dashboard');
   }
 };
 

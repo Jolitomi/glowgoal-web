@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { BuddyType } from './buddy';
 import { db } from './firebase';
+import { getGuestPreferences, saveGuestPreferences } from './guest-storage';
 
 export type UserPreferences = {
   buddy: BuddyType;
@@ -36,58 +37,63 @@ function getCurrentUserId() {
   return auth.currentUser?.uid ?? null;
 }
 
-async function requireUserId() {
-  const userId = getCurrentUserId();
-
-  if (!userId) {
-    throw new Error('No signed-in user found.');
-  }
-
-  return userId;
-}
-
-async function getPreferencesRef() {
-  const userId = await requireUserId();
-  return doc(db, 'users', userId, 'profile', 'preferences');
-}
-
 export async function getUserPreferences(): Promise<UserPreferences> {
-  const preferencesRef = await getPreferencesRef();
-  const snapshot = await getDoc(preferencesRef);
-
-  if (!snapshot.exists()) {
-    await setDoc(preferencesRef, DEFAULT_PREFERENCES, { merge: true });
-    return DEFAULT_PREFERENCES;
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const guestPrefs = await getGuestPreferences();
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...(guestPrefs || {}),
+    };
   }
 
-  const data = snapshot.data() as Partial<UserPreferences>;
+  try {
+    const preferencesRef = doc(db, 'users', userId, 'profile', 'preferences');
+    const snapshot = await getDoc(preferencesRef);
 
- return {
-  buddy: data.buddy ?? 'hype',
-  pushNotificationsEnabled: data.pushNotificationsEnabled ?? true,
-  expoPushToken: data.expoPushToken ?? null,
+    if (!snapshot.exists()) {
+      await setDoc(preferencesRef, DEFAULT_PREFERENCES, { merge: true });
+      return DEFAULT_PREFERENCES;
+    }
 
-  emailNotificationsEnabled: data.emailNotificationsEnabled ?? false,
-  reminderEmail: data.reminderEmail ?? null,
-  afternoonEmailEnabled: data.afternoonEmailEnabled ?? true,
-  deadlineEmailEnabled: data.deadlineEmailEnabled ?? true,
+    const data = snapshot.data() as Partial<UserPreferences>;
 
-  updatedAt: data.updatedAt ?? new Date().toISOString(),
-};
+    return {
+      buddy: data.buddy ?? 'hype',
+      pushNotificationsEnabled: data.pushNotificationsEnabled ?? true,
+      expoPushToken: data.expoPushToken ?? null,
+      emailNotificationsEnabled: data.emailNotificationsEnabled ?? false,
+      reminderEmail: data.reminderEmail ?? null,
+      afternoonEmailEnabled: data.afternoonEmailEnabled ?? true,
+      deadlineEmailEnabled: data.deadlineEmailEnabled ?? true,
+      updatedAt: data.updatedAt ?? new Date().toISOString(),
+    };
+  } catch (error) {
+    console.warn('Failed to fetch preferences from Firestore, using guest prefs:', error);
+    const guestPrefs = await getGuestPreferences();
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...(guestPrefs || {}),
+    };
+  }
 }
 
 export async function saveUserPreferences(
   updates: Partial<UserPreferences>
 ): Promise<UserPreferences> {
-  const preferencesRef = await getPreferencesRef();
+  const userId = getCurrentUserId();
+  if (!userId) {
+    await saveGuestPreferences(updates);
+    return getUserPreferences();
+  }
 
+  const preferencesRef = doc(db, 'users', userId, 'profile', 'preferences');
   const nextPreferences: Partial<UserPreferences> = {
     ...updates,
     updatedAt: new Date().toISOString(),
   };
 
   await setDoc(preferencesRef, nextPreferences, { merge: true });
-
   return getUserPreferences();
 }
 
@@ -97,8 +103,13 @@ export async function saveUserBuddy(buddy: BuddyType) {
 }
 
 export async function updateUserBuddy(buddy: BuddyType) {
-  const preferencesRef = await getPreferencesRef();
+  const userId = getCurrentUserId();
+  if (!userId) {
+    await saveGuestPreferences({ buddy });
+    return buddy;
+  }
 
+  const preferencesRef = doc(db, 'users', userId, 'profile', 'preferences');
   try {
     await updateDoc(preferencesRef, {
       buddy,
@@ -123,7 +134,6 @@ export async function updatePushNotificationsEnabled(enabled: boolean) {
   const preferences = await saveUserPreferences({
     pushNotificationsEnabled: enabled,
   });
-
   return preferences.pushNotificationsEnabled;
 }
 
@@ -131,8 +141,18 @@ export async function saveExpoPushToken(token: string | null) {
   const preferences = await saveUserPreferences({
     expoPushToken: token,
   });
-
   return preferences.expoPushToken;
+}
+
+export async function syncGuestPreferencesToFirebase(): Promise<void> {
+  const userId = getCurrentUserId();
+  if (!userId) return;
+
+  const guestPrefs = await getGuestPreferences();
+  if (!guestPrefs) return;
+
+  const preferencesRef = doc(db, 'users', userId, 'profile', 'preferences');
+  await setDoc(preferencesRef, guestPrefs, { merge: true });
 }
 
 export function subscribeToUserPreferences(
@@ -142,7 +162,7 @@ export function subscribeToUserPreferences(
   const userId = getCurrentUserId();
 
   if (!userId) {
-    onChange(DEFAULT_PREFERENCES);
+    getUserPreferences().then(onChange).catch(() => onChange(DEFAULT_PREFERENCES));
     return () => {};
   }
 
@@ -162,6 +182,10 @@ export function subscribeToUserPreferences(
         buddy: data.buddy ?? 'hype',
         pushNotificationsEnabled: data.pushNotificationsEnabled ?? true,
         expoPushToken: data.expoPushToken ?? null,
+        emailNotificationsEnabled: data.emailNotificationsEnabled ?? false,
+        reminderEmail: data.reminderEmail ?? null,
+        afternoonEmailEnabled: data.afternoonEmailEnabled ?? true,
+        deadlineEmailEnabled: data.deadlineEmailEnabled ?? true,
         updatedAt: data.updatedAt ?? new Date().toISOString(),
       });
     },
@@ -171,11 +195,11 @@ export function subscribeToUserPreferences(
     }
   );
 }
+
 export async function updateEmailNotificationsEnabled(enabled: boolean) {
   const preferences = await saveUserPreferences({
     emailNotificationsEnabled: enabled,
   });
-
   return preferences.emailNotificationsEnabled;
 }
 
@@ -183,7 +207,6 @@ export async function updateReminderEmail(email: string) {
   const preferences = await saveUserPreferences({
     reminderEmail: email,
   });
-
   return preferences.reminderEmail;
 }
 
@@ -191,7 +214,6 @@ export async function updateAfternoonEmailEnabled(enabled: boolean) {
   const preferences = await saveUserPreferences({
     afternoonEmailEnabled: enabled,
   });
-
   return preferences.afternoonEmailEnabled;
 }
 
@@ -199,6 +221,5 @@ export async function updateDeadlineEmailEnabled(enabled: boolean) {
   const preferences = await saveUserPreferences({
     deadlineEmailEnabled: enabled,
   });
-
   return preferences.deadlineEmailEnabled;
 }

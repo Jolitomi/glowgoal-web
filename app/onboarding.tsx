@@ -1,1233 +1,1216 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Easing,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  View,
+  TextInput,
   useWindowDimensions,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { BuddyType, buddyConfig } from '../lib/buddy';
+import { GoalItem, saveGoal } from '../lib/goals';
+import {
+  CURATED_GOALS,
+  CuratedGoalOption,
+  FRICTION_OPTIONS,
+  OnboardingFriction,
+  buildOnboardingGoal,
+  getBuddyBanter,
+} from '../lib/onboarding-flow';
+import { saveUserBuddy, saveUserPreferences } from '../lib/preferences';
 
-const onboardingSlides = [
-  {
-    id: 1,
-    eyebrow: 'Plan Smarter',
-    title: 'Turn big goals\ninto daily wins',
-    
-    type: 'tasks',
-  },
-  {
-    id: 2,
-    eyebrow: 'Stay Accountable',
-    title: 'We hype you.\nWe roast you.\nWe support.',
-    subtitle:
-      'GlowGoal gives feedback with personality, so staying consistent never feels dry or robotic.',
-    type: 'feedback',
-  },
-  {
-    id: 3,
-    eyebrow: 'Build Momentum',
-    title: 'Consistency >\nPerfection',
-    type: 'streak',
-  },
-];
-
-function SlideOnePreview({ short }: { short: boolean }) {
-  const card1 = useRef(new Animated.Value(30)).current;
-  const card2 = useRef(new Animated.Value(45)).current;
-  const card3 = useRef(new Animated.Value(60)).current;
-
-  const opacity1 = useRef(new Animated.Value(0)).current;
-  const opacity2 = useRef(new Animated.Value(0)).current;
-  const opacity3 = useRef(new Animated.Value(0)).current;
-
-  const progressWidth = useRef(new Animated.Value(0)).current;
-  const burstScale = useRef(new Animated.Value(0.6)).current;
-  const burstOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(card1, {
-          toValue: 0,
-          duration: 450,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity1, {
-          toValue: 1,
-          duration: 450,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(card2, {
-          toValue: 0,
-          duration: 450,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity2, {
-          toValue: 1,
-          duration: 450,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(card3, {
-          toValue: 0,
-          duration: 450,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity3, {
-          toValue: 1,
-          duration: 450,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(progressWidth, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.sequence([
-          Animated.timing(burstOpacity, {
-            toValue: 1,
-            duration: 180,
-            useNativeDriver: true,
-          }),
-          Animated.timing(burstOpacity, {
-            toValue: 0,
-            duration: 420,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(burstScale, {
-            toValue: 1.2,
-            duration: 220,
-            useNativeDriver: true,
-          }),
-          Animated.timing(burstScale, {
-            toValue: 1,
-            duration: 220,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ]).start();
-  }, [card1, card2, card3, opacity1, opacity2, opacity3, progressWidth, burstScale, burstOpacity]);
-
-  const animatedBarWidth = progressWidth.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '78%'],
-  });
-
-  return (
-    <View style={styles.previewFrame}>
-      <View style={styles.bgGlowOne} />
-      <View style={styles.bgGlowTwo} />
-
-      <View style={styles.taskMainCard}>
-        <Text style={styles.previewHeading}>Launch Side Hustle</Text>
-        <Text style={styles.previewSubheading}>Today’s power moves</Text>
-
-        <View style={styles.progressWrap}>
-          <View style={styles.progressTrack}>
-            <Animated.View style={[styles.progressFill, { width: animatedBarWidth }]} />
-          </View>
-          <Text style={styles.progressText}>78%</Text>
-        </View>
-
-        <Animated.View
-          style={[
-            styles.taskFancyRow,
-            {
-              opacity: opacity1,
-              transform: [{ translateY: card1 }],
-            },
-          ]}
-        >
-          <View style={styles.taskCheckCircle}>
-            <Text style={styles.taskCheckText}>✓</Text>
-          </View>
-          <View style={styles.taskTextWrap}>
-            <Text style={styles.taskMainText}>Research Market</Text>
-            <Text style={styles.taskSubText}>15 mins • Warm up task</Text>
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.taskFancyRow,
-            {
-              opacity: opacity2,
-              transform: [{ translateY: card2 }],
-            },
-          ]}
-        >
-          <View style={styles.taskCheckCircleSoft} />
-          <View style={styles.taskTextWrap}>
-            <Text style={styles.taskMainText}>Build Landing Page</Text>
-            <Text style={styles.taskSubText}>45 mins • Main build</Text>
-          </View>
-        </Animated.View>
-
-        <View style={styles.motivationStrip}>
-          <Text style={styles.motivationStripText}>
-            Big goals feel lighter when broken into tiny wins.
-          </Text>
-        </View>
-
-        <Animated.View
-          style={[
-            styles.successBurst,
-            {
-              opacity: burstOpacity,
-              transform: [{ scale: burstScale }],
-            },
-          ]}
-        >
-          <Text style={styles.successBurstText}>+1 Win ✨</Text>
-        </Animated.View>
-      </View>
-
-      <View style={[styles.sparkDot, { top: short ? 36 : 24, right: 24 }]} />
-      <View style={[styles.sparkDotSmall, { bottom: 48, left: 26 }]} />
-    </View>
-  );
-}
-
-function FloatingPopup({
-  style,
-  bubbleStyle,
-  textStyle,
-  text,
-  animation,
-}: {
-  style?: object;
-  bubbleStyle?: object;
-  textStyle?: object;
-  text: string;
-  animation: Animated.Value;
-}) {
-  return (
-    <Animated.View
-      style={[
-        styles.popupWrap,
-        style,
-        {
-          opacity: animation.interpolate({
-            inputRange: [0, 0.2, 0.8, 1],
-            outputRange: [0, 1, 1, 0],
-          }),
-          transform: [
-            {
-              translateY: animation.interpolate({
-                inputRange: [0, 1],
-                outputRange: [18, -12],
-              }),
-            },
-            {
-              scale: animation.interpolate({
-                inputRange: [0, 0.2, 1],
-                outputRange: [0.92, 1, 1.02],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <View style={[styles.popupBubble, bubbleStyle]}>
-        <Text style={[styles.popupText, textStyle]}>{text}</Text>
-      </View>
-    </Animated.View>
-  );
-}
-
-function SlideTwoPreview() {
-  const orbPulse = useRef(new Animated.Value(1)).current;
-  const popup1 = useRef(new Animated.Value(0)).current;
-  const popup2 = useRef(new Animated.Value(0)).current;
-  const popup3 = useRef(new Animated.Value(0)).current;
-  const popup4 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orbPulse, {
-          toValue: 1.08,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(orbPulse, {
-          toValue: 1,
-          duration: 1200,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    const loopPopup = (value: Animated.Value, delay: number) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(value, {
-            toValue: 1,
-            duration: 900,
-            easing: Easing.out(Easing.back(1.4)),
-            useNativeDriver: true,
-          }),
-          Animated.delay(1300),
-          Animated.timing(value, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    };
-
-    loopPopup(popup1, 0);
-    loopPopup(popup2, 500);
-    loopPopup(popup3, 1000);
-    loopPopup(popup4, 1500);
-  }, [orbPulse, popup1, popup2, popup3, popup4]);
-
-  const popupAnim = (value: Animated.Value) => ({
-    opacity: value,
-    transform: [
-      {
-        translateY: value.interpolate({
-          inputRange: [0, 1],
-          outputRange: [20, 0],
-        }),
-      },
-      {
-        scale: value.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.88, 1],
-        }),
-      },
-    ],
-  });
-
-  return (
-    <View style={styles.previewFrame}>
-      <View style={styles.feedbackCoreCard}>
-        <Text style={styles.previewHeading}>Buddy Feedback</Text>
-        <Text style={styles.previewSubheading}>Accountability with personality</Text>
-
-        <Animated.View style={[styles.liveBuddyOrb, { transform: [{ scale: orbPulse }] }]}>
-          <Text style={styles.liveBuddyOrbEmoji}>✨</Text>
-        </Animated.View>
-
-        <View style={styles.personalityChips}>
-          <View style={styles.personalityChip}>
-            <Text style={styles.personalityChipText}>Hype Bestie</Text>
-          </View>
-          <View style={styles.personalityChip}>
-            <Text style={styles.personalityChipText}>Savage Coach</Text>
-          </View>
-          <View style={styles.personalityChip}>
-            <Text style={styles.personalityChipText}>Soft Support</Text>
-          </View>
-        </View>
-      </View>
-
-      <Animated.View style={[styles.popupWrap, { top: 20, left: 6 }, popupAnim(popup1)]}>
-        <View style={[styles.popupBubble, styles.popupGood]}>
-          <Text style={[styles.popupText, styles.popupGoodText]}>You did that! 🔥</Text>
-        </View>
-      </Animated.View>
-
-      <Animated.View style={[styles.popupWrap, { top: 92, right: 4 }, popupAnim(popup2)]}>
-        <View style={[styles.popupBubble, styles.popupRoast]}>
-          <Text style={[styles.popupText, styles.popupRoastText]}>
-            Babe… be serious 😭
-          </Text>
-        </View>
-      </Animated.View>
-
-      <Animated.View style={[styles.popupWrap, { bottom: 86, left: 22 }, popupAnim(popup3)]}>
-        <View style={[styles.popupBubble, styles.popupSoft]}>
-          <Text style={[styles.popupText, styles.popupSoftText]}>
-            Progress, not perfection 💛
-          </Text>
-        </View>
-      </Animated.View>
-
-      <Animated.View style={[styles.popupWrap, { bottom: 26, right: 18 }, popupAnim(popup4)]}>
-        <View style={[styles.popupBubble, styles.popupGood]}>
-          <Text style={[styles.popupText, styles.popupGoodText]}>
-            One task. Start there ✨
-          </Text>
-        </View>
-      </Animated.View>
-    </View>
-  );
-}
-
-function SlideThreePreview() {
-  const glow = useRef(new Animated.Value(0.7)).current;
-  const shimmer = useRef(new Animated.Value(-140)).current;
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, {
-          toValue: 1,
-          duration: 1100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glow, {
-          toValue: 0.7,
-          duration: 1100,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmer, {
-          toValue: 180,
-          duration: 1600,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmer, {
-          toValue: -140,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-        Animated.delay(900),
-      ])
-    ).start();
-
-    let current = 0;
-    const timer = setInterval(() => {
-      current += 1;
-      setCount(current);
-      if (current >= 30) {
-        clearInterval(timer);
-      }
-    }, 35);
-
-    return () => clearInterval(timer);
-  }, [glow, shimmer]);
-
-  return (
-    <View style={styles.previewFrame}>
-      <Animated.View style={[styles.streakGlow, { opacity: glow }]} />
-
-      <View style={styles.streakMainCard}>
-        <Text style={styles.previewHeading}>Consistency Tracker</Text>
-        <Text style={styles.previewSubheading}>Momentum over perfection</Text>
-
-        <View style={styles.streakHero}>
-          <Text style={styles.streakHeroText}>🔥 {count}</Text>
-          <Text style={styles.streakHeroSub}>Days Streak</Text>
-
-          <Animated.View
-            style={[
-              styles.shimmerBar,
-              {
-                transform: [{ translateX: shimmer }, { rotate: '18deg' }],
-              },
-            ]}
-          />
-        </View>
-
-        <View style={styles.streakGrid}>
-          {Array.from({ length: 15 }, (_, i) => i + 1).map((day) => (
-            <View
-              key={day}
-              style={[
-                styles.streakChip,
-                day <= 10 ? styles.streakChipActive : null,
-              ]}
-            >
-              <Text style={styles.streakChipText}>{day}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.motivationStrip}>
-          <Text style={styles.motivationStripText}>
-            Progress is a journey, not a race. Keep glowing.
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-}
+const BUDDY_MASCOTS: Record<BuddyType, any> = {
+  hype: require('../assets/images/hype.png'),
+  soft: require('../assets/images/soft.png'),
+  savage: require('../assets/images/savage.png'),
+};
 
 export default function OnboardingScreen() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
   const { width, height } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768 && width < 1024;
+  const isPhone = width < 768;
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
-  const dotAnim = useRef(new Animated.Value(0)).current;
-  const bgAnim = useRef(new Animated.Value(0)).current;
-  const gradients: readonly [string, string, string][] = [
-  ['#828C6A', '#A0AB89', '#CCBEB1'],
-  ['#8C6A7E', '#B59AA8', '#F1E7EC'],
-  ['#828C6A', '#A0AB89', '#CCBEB1'],
-];
+  // Step Index: 0 = Goal, 1 = Friction, 2 = Buddy, 3 = Micro-Win
+  const [step, setStep] = useState<number>(0);
 
-  const isWide = width >= 900;
-  const isTablet = width >= 700;
-  const isShort = height < 760;
+  // Step 1: Goal state
+  const [selectedCuratedId, setSelectedCuratedId] = useState<string>('fitness');
+  const [customGoalText, setCustomGoalText] = useState<string>('');
+  const [isCustomGoal, setIsCustomGoal] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<'health' | 'career' | 'study' | 'creative' | 'personal'>('health');
 
-  const slide = onboardingSlides[currentSlide];
+  // Step 2: Friction state
+  const [selectedFriction, setSelectedFriction] = useState<OnboardingFriction>('procrastination');
 
-  const ui = useMemo(() => {
-    return {
-      horizontalPadding: isWide ? 52 : 24,
-      titleSize: isWide ? 50 : isTablet ? 42 : 34,
-      titleLineHeight: isWide ? 58 : isTablet ? 48 : 40,
-      subtitleSize: isWide ? 18 : 16,
-      subtitleLineHeight: isWide ? 28 : 24,
-      sectionGap: isWide ? 36 : 22,
-      buttonPadding: isShort ? 14 : 16,
-      topPad: isShort ? 6 : 10,
-    };
-  }, [isWide, isTablet, isShort]);
+  // Step 3: Buddy state
+  const [selectedBuddy, setSelectedBuddy] = useState<BuddyType>('hype');
 
+  // Step 4: Micro-win custom override
+  const [customMicroWin, setCustomMicroWin] = useState<string>('');
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const mascotScale = useRef(new Animated.Value(1)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  // Idle mascot floating animation
   useEffect(() => {
-  fadeAnim.setValue(0);
-  slideAnim.setValue(24);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -10,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1800,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ])
+    ).start();
+  }, []);
 
-  Animated.parallel([
-    // screen transition
-    Animated.timing(fadeAnim, {
+  const triggerStepTransition = (nextStep: number) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start();
+    setStep(nextStep);
+  };
+
+  const handleBuddySelect = (buddy: BuddyType) => {
+    if (buddy === selectedBuddy) return;
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setSelectedBuddy(buddy);
+    mascotScale.setValue(0.85);
+    Animated.spring(mascotScale, {
       toValue: 1,
-      duration: 420,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }),
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 420,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }),
+      friction: 4,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+  };
 
-    // dots animation
-    Animated.timing(dotAnim, {
-      toValue: currentSlide,
-      duration: 300,
-      useNativeDriver: false,
-    }),
+  // Derive active goal info
+  const activeGoalTitle = useMemo(() => {
+    if (isCustomGoal && customGoalText.trim()) {
+      return customGoalText.trim();
+    }
+    const found = CURATED_GOALS.find((g) => g.id === selectedCuratedId);
+    return found ? found.title : 'My Goal';
+  }, [isCustomGoal, customGoalText, selectedCuratedId]);
 
-    // background animation
-    Animated.timing(bgAnim, {
-      toValue: currentSlide,
-      duration: 500,
-      useNativeDriver: false,
-    }),
-  ]).start();
-}, [currentSlide]);
+  const activeCategory = useMemo(() => {
+    if (isCustomGoal) return selectedCategory;
+    const found = CURATED_GOALS.find((g) => g.id === selectedCuratedId);
+    return found ? found.category : 'personal';
+  }, [isCustomGoal, selectedCategory, selectedCuratedId]);
 
-const goNext = async () => {
-  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Derived live banter
+  const banter = useMemo(() => {
+    return getBuddyBanter({
+      buddy: selectedBuddy,
+      goalTitle: activeGoalTitle,
+      friction: selectedFriction,
+    });
+  }, [selectedBuddy, activeGoalTitle, selectedFriction]);
 
-  if (currentSlide < onboardingSlides.length - 1) {
-    setCurrentSlide((prev) => prev + 1);
-  } else {
-    router.push('/signup');
-  }
-};
+  // Built goal object for Step 4
+  const generatedGoal: GoalItem = useMemo(() => {
+    return buildOnboardingGoal({
+      title: activeGoalTitle,
+      category: activeCategory,
+      customMicroWin: customMicroWin.trim() ? customMicroWin.trim() : undefined,
+      curatedId: isCustomGoal ? undefined : selectedCuratedId,
+    });
+  }, [activeGoalTitle, activeCategory, customMicroWin, isCustomGoal, selectedCuratedId]);
 
-const goBack = async () => {
-  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Save progress and launch
+  const handleLaunch = async (mode: 'guest' | 'signup') => {
+    try {
+      setIsSaving(true);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
 
-  if (currentSlide === 0) {
-    router.back();
-  } else {
-    setCurrentSlide((prev) => prev - 1);
-  }
-};
+      // Save buddy and preferences
+      await saveUserBuddy(selectedBuddy);
+      await saveUserPreferences({ buddy: selectedBuddy });
+
+      // Save initial goal
+      await saveGoal(generatedGoal);
+
+      if (mode === 'signup') {
+        router.push('/signup');
+      } else {
+        router.replace('/dashboard');
+      }
+    } catch (error) {
+      console.error('Failed to complete onboarding launch:', error);
+      router.replace('/dashboard');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Background colors per step or buddy
+  const gradientColors: [string, string, string] = useMemo(() => {
+    if (step === 2) {
+      if (selectedBuddy === 'savage') return ['#3A2F4C', '#584570', '#83679E'];
+      if (selectedBuddy === 'soft') return ['#2C4253', '#436177', '#7195AD'];
+      return ['#4A472E', '#6B6846', '#9B9670'];
+    }
+    return ['#353B2C', '#576049', '#828C6A'];
+  }, [step, selectedBuddy]);
 
   return (
-    <LinearGradient
-      colors={gradients[currentSlide]}
-      start={{ x: 0.2, y: 0 }}
-      end={{ x: 0.8, y: 1 }}
-      style={styles.gradient}
-    >
-      <SafeAreaView
-        style={[
-          styles.container,
-          { paddingHorizontal: ui.horizontalPadding, paddingTop: ui.topPad },
-        ]}
-      >
-        <StatusBar barStyle="light-content" />
-
-        <View style={styles.topBar}>
-          <Pressable onPress={goBack} hitSlop={10}>
-            <Text style={styles.topAction}>
-              {currentSlide === 0 ? 'Back' : 'Previous'}
-            </Text>
-          </Pressable>
-
-          <Pressable onPress={() => router.push('/signup')} hitSlop={10}>
-            <Text style={styles.topAction}>Skip</Text>
-          </Pressable>
-        </View>
-
-        <Animated.View
-          style={[
-            styles.main,
-            isWide && styles.mainWide,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
+    <LinearGradient colors={gradientColors} style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardWrap}
         >
-          <View style={[styles.textSection, isWide && styles.textSectionWide]}>
-            <View style={styles.eyebrowPill}>
-              <Text style={styles.eyebrowText}>{slide.eyebrow}</Text>
+          {/* Header Navigation & Progress Bar */}
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              {step > 0 ? (
+                <Pressable
+                  onPress={() => triggerStepTransition(step - 1)}
+                  style={styles.backButton}
+                  hitSlop={12}
+                >
+                  <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+                  <Text style={styles.backButtonText}>Back</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => router.replace('/launch')}
+                  style={styles.backButton}
+                  hitSlop={12}
+                >
+                  <Ionicons name="close" size={22} color="#FFFFFF" />
+                </Pressable>
+              )}
+
+              <Text style={styles.brandTitle}>GlowGoal⭐</Text>
+
+              <Pressable
+                onPress={() => router.push('/signup')}
+                style={styles.skipButton}
+                hitSlop={12}
+              >
+                <Text style={styles.skipButtonText}>Sign In</Text>
+              </Pressable>
             </View>
 
-            <Text
-              style={[
-                styles.title,
-                {
-                  fontSize: ui.titleSize,
-                  lineHeight: ui.titleLineHeight,
-                },
-              ]}
-            >
-              {slide.title}
-            </Text>
-
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  fontSize: ui.subtitleSize,
-                  lineHeight: ui.subtitleLineHeight,
-                },
-              ]}
-            >
-              {slide.subtitle}
-            </Text>
+            {/* 4-Step Indicator */}
+            <View style={styles.progressContainer}>
+              {[0, 1, 2, 3].map((idx) => {
+                const isActive = idx <= step;
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.progressBar,
+                      isActive ? styles.progressBarActive : styles.progressBarInactive,
+                    ]}
+                  />
+                );
+              })}
+            </View>
           </View>
-<View
-  style={[
-    styles.previewArea,
-    isWide ? styles.previewAreaWide : styles.previewAreaMobile,
-  ]}
->
-  <Animated.View
-    key={currentSlide}
-    style={[
-      styles.page,
-      {
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      },
-    ]}
-  >
-    {currentSlide === 0 && <SlideOnePreview short={isShort} />}
-    {currentSlide === 1 && <SlideTwoPreview />}
-    {currentSlide === 2 && <SlideThreePreview />}
-  </Animated.View>
-</View>
-           </Animated.View>
 
-        <View style={styles.dotsRow}>
-  {onboardingSlides.map((_, index) => {
-    const width = dotAnim.interpolate({
-      inputRange: [index - 1, index, index + 1],
-      outputRange: [10, 28, 10],
-      extrapolate: 'clamp',
-    });
+          {/* Dynamic Step Content */}
+          <ScrollView
+            contentContainerStyle={[
+              styles.scrollContent,
+              isDesktop && styles.scrollContentDesktop,
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            <Animated.View style={[{ opacity: fadeAnim, width: '100%', maxWidth: 720 }]}>
+              {/* ================= STEP 0: GOAL DISCOVERY ================= */}
+              {step === 0 && (
+                <View style={styles.stepContainer}>
+                  <View style={styles.badgeWrap}>
+                    <Text style={styles.badgeText}>STEP 1: THE TARGET</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>What do you want to achieve?</Text>
+                  <Text style={styles.stepSubheading}>
+                    Pick a starting goal or write your own. We will break it down so it never feels impossible.
+                  </Text>
 
-    const opacity = dotAnim.interpolate({
-      inputRange: [index - 1, index, index + 1],
-      outputRange: [0.4, 1, 0.4],
-      extrapolate: 'clamp',
-    });
+                  {/* Curated Preset Cards */}
+                  <View style={styles.optionsList}>
+                    {CURATED_GOALS.map((item) => {
+                      const isSelected = !isCustomGoal && selectedCuratedId === item.id;
+                      return (
+                        <Pressable
+                          key={item.id}
+                          onPress={() => {
+                            setIsCustomGoal(false);
+                            setSelectedCuratedId(item.id);
+                            if (Platform.OS !== 'web') {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                          }}
+                          style={[
+                            styles.cardPill,
+                            isSelected ? styles.cardPillActive : styles.cardPillInactive,
+                          ]}
+                        >
+                          <Text style={styles.cardEmoji}>{item.icon}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[
+                                styles.cardPillTitle,
+                                isSelected ? styles.textDark : styles.textLight,
+                              ]}
+                            >
+                              {item.title}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.cardPillSubtitle,
+                                isSelected ? styles.textDarkDim : styles.textLightDim,
+                              ]}
+                            >
+                              {item.category.toUpperCase()} • 3-min starter task ready
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
+                            size={22}
+                            color={isSelected ? '#353B2C' : 'rgba(255,255,255,0.4)'}
+                          />
+                        </Pressable>
+                      );
+                    })}
 
-    return (
-      <Animated.View
-        key={index}
-        style={[
-          styles.dot,
-          {
-            width,
-            opacity,
-          },
-        ]}
-      />
-    );
-  })}
-</View>
+                    {/* Custom Goal Accordion / Option */}
+                    <Pressable
+                      onPress={() => {
+                        setIsCustomGoal(true);
+                        if (Platform.OS !== 'web') {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                      }}
+                      style={[
+                        styles.cardPill,
+                        isCustomGoal ? styles.cardPillActive : styles.cardPillInactive,
+                      ]}
+                    >
+                      <Text style={styles.cardEmoji}>🎯</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={[
+                            styles.cardPillTitle,
+                            isCustomGoal ? styles.textDark : styles.textLight,
+                          ]}
+                        >
+                          Write my own custom goal
+                        </Text>
+                        <Text
+                          style={[
+                            styles.cardPillSubtitle,
+                            isCustomGoal ? styles.textDarkDim : styles.textLightDim,
+                          ]}
+                        >
+                          Any project, hobby, habit, or milestone
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name={isCustomGoal ? 'create' : 'add-circle-outline'}
+                        size={22}
+                        color={isCustomGoal ? '#353B2C' : 'rgba(255,255,255,0.4)'}
+                      />
+                    </Pressable>
 
-          <View style={styles.buttonRow}>
-            <Pressable
-              onPress={goBack}
-              style={({ pressed, hovered }) => [
-                styles.secondaryButton,
-                (pressed || hovered) && styles.secondaryButtonActive,
-              ]}
-            >
-              {({ pressed, hovered }) => (
-                <Text
-                  style={[
-                    styles.secondaryButtonText,
-                    (pressed || hovered) && styles.secondaryButtonTextActive,
-                  ]}
-                >
-                  {currentSlide === 0 ? 'Exit' : 'Back'}
-                </Text>
+                    {/* Custom Input Field when selected */}
+                    {isCustomGoal && (
+                      <View style={styles.customInputContainer}>
+                        <TextInput
+                          value={customGoalText}
+                          onChangeText={setCustomGoalText}
+                          placeholder="e.g. Master React Native, Run a marathon, Save $5k..."
+                          placeholderTextColor="rgba(255,255,255,0.5)"
+                          style={styles.customTextInput}
+                          autoFocus
+                        />
+                        <View style={styles.categoryPickerRow}>
+                          {(['health', 'career', 'study', 'creative', 'personal'] as const).map((cat) => {
+                            const isCatActive = selectedCategory === cat;
+                            return (
+                              <Pressable
+                                key={cat}
+                                onPress={() => setSelectedCategory(cat)}
+                                style={[
+                                  styles.categoryChip,
+                                  isCatActive && styles.categoryChipActive,
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.categoryChipText,
+                                    isCatActive && styles.categoryChipTextActive,
+                                  ]}
+                                >
+                                  {cat}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+
+                  <Pressable
+                    onPress={() => triggerStepTransition(1)}
+                    disabled={isCustomGoal && !customGoalText.trim()}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      (isCustomGoal && !customGoalText.trim()) && styles.buttonDisabled,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>Continue to Friction Point</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#2A2E22" />
+                  </Pressable>
+                </View>
               )}
-            </Pressable>
 
-            <Pressable
-              onPress={goNext}
-              style={({ pressed, hovered }) => [
-                styles.primaryButton,
-                { paddingVertical: ui.buttonPadding },
-                (pressed || hovered) && styles.primaryButtonActive,
-              ]}
-            >
-              {({ pressed, hovered }) => (
-                <Text
-                  style={[
-                    styles.primaryButtonText,
-                    (pressed || hovered) && styles.primaryButtonTextActive,
-                  ]}
-                >
-                  {currentSlide === onboardingSlides.length - 1 ? 'Get Started' : 'Next'}
-                </Text>
+              {/* ================= STEP 1: THE FRICTION POINT ================= */}
+              {step === 1 && (
+                <View style={styles.stepContainer}>
+                  <View style={styles.badgeWrap}>
+                    <Text style={styles.badgeText}>STEP 2: THE BLOCKER</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>What usually breaks your streak?</Text>
+                  <Text style={styles.stepSubheading}>
+                    Be honest. Your accountability buddy adapts their style to counter this exact trap.
+                  </Text>
+
+                  <View style={styles.optionsList}>
+                    {FRICTION_OPTIONS.map((item) => {
+                      const isSelected = selectedFriction === item.key;
+                      return (
+                        <Pressable
+                          key={item.key}
+                          onPress={() => {
+                            setSelectedFriction(item.key);
+                            if (Platform.OS !== 'web') {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                          }}
+                          style={[
+                            styles.frictionCard,
+                            isSelected ? styles.cardPillActive : styles.cardPillInactive,
+                          ]}
+                        >
+                          <Text style={styles.frictionEmoji}>{item.emoji}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[
+                                styles.cardPillTitle,
+                                isSelected ? styles.textDark : styles.textLight,
+                              ]}
+                            >
+                              {item.title}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.cardPillSubtitle,
+                                isSelected ? styles.textDarkDim : styles.textLightDim,
+                              ]}
+                            >
+                              {item.subtitle}
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.radioCircle,
+                              isSelected && styles.radioCircleActive,
+                            ]}
+                          >
+                            {isSelected && <View style={styles.radioInner} />}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Pressable
+                    onPress={() => triggerStepTransition(2)}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>Meet Your Accountability Buddy</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#2A2E22" />
+                  </Pressable>
+                </View>
               )}
-            </Pressable>
-          </View>
+
+              {/* ================= STEP 2: BUDDY & LIVE BANTER ================= */}
+              {step === 2 && (
+                <View style={styles.stepContainer}>
+                  <View style={styles.badgeWrap}>
+                    <Text style={styles.badgeText}>STEP 3: THE VIBE CHECK</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>Pick your buddy's style</Text>
+                  <Text style={styles.stepSubheading}>
+                    Tap each buddy to hear how they will hold you accountable for "{activeGoalTitle}".
+                  </Text>
+
+                  {/* Mascot Live Banter Stage */}
+                  <View style={styles.liveStage}>
+                    {/* Speech Bubble Tail */}
+                    <View style={styles.speechBubble}>
+                      <View style={styles.speechTagBadge}>
+                        <Text style={styles.speechTagText}>{banter.tag}</Text>
+                      </View>
+                      <Text style={styles.speechText}>{banter.speech}</Text>
+                    </View>
+
+                    {/* Animated Mascot */}
+                    <Animated.View
+                      style={[
+                        styles.mascotWrapper,
+                        {
+                          transform: [
+                            { translateY: floatAnim },
+                            { scale: mascotScale },
+                          ],
+                        },
+                      ]}
+                    >
+                      <Image
+                        source={BUDDY_MASCOTS[selectedBuddy]}
+                        style={styles.mascotImage}
+                        resizeMode="contain"
+                      />
+                    </Animated.View>
+                  </View>
+
+                  {/* 3 Buddy Style Selector Pills */}
+                  <View style={styles.buddyGrid}>
+                    {(['hype', 'soft', 'savage'] as BuddyType[]).map((type) => {
+                      const isSelected = selectedBuddy === type;
+                      const config = buddyConfig[type];
+
+                      return (
+                        <Pressable
+                          key={type}
+                          onPress={() => handleBuddySelect(type)}
+                          style={[
+                            styles.buddyOptionCard,
+                            isSelected && styles.buddyOptionCardActive,
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.buddyIconCircle,
+                              { backgroundColor: config.accent },
+                            ]}
+                          >
+                            <Text style={styles.buddyIconText}>
+                              {type === 'hype' ? '🔥' : type === 'soft' ? '💙' : '😌'}
+                            </Text>
+                          </View>
+                          <Text style={styles.buddyOptionTitle}>{config.label}</Text>
+                          <Text style={styles.buddyOptionTagline} numberOfLines={2}>
+                            {type === 'hype' && 'Pure praise & high energy'}
+                            {type === 'soft' && 'Zero guilt & gentle pacing'}
+                            {type === 'savage' && 'Hilarious roast & tough love'}
+                          </Text>
+                          {isSelected && (
+                            <View style={styles.activeCheckmark}>
+                              <Ionicons name="checkmark" size={14} color="#FFF" />
+                            </View>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <Pressable
+                    onPress={() => triggerStepTransition(3)}
+                    style={({ pressed }) => [
+                      styles.primaryButton,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
+                    <Text style={styles.primaryButtonText}>Lock In Buddy & See Day 1 Task</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#2A2E22" />
+                  </Pressable>
+                </View>
+              )}
+
+              {/* ================= STEP 3: DAY 1 MICRO-WIN ================= */}
+              {step === 3 && (
+                <View style={styles.stepContainer}>
+                  <View style={styles.badgeWrap}>
+                    <Text style={styles.badgeText}>STEP 4: DAY 1 MOMENTUM</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>Your 3-minute micro-win</Text>
+                  <Text style={styles.stepSubheading}>
+                    Consistency doesn't come from giant leaps. It comes from one ridiculously easy step today.
+                  </Text>
+
+                  {/* The Highlighted Day 1 Micro-Win Card */}
+                  <View style={styles.microWinHeroCard}>
+                    <View style={styles.microWinHeader}>
+                      <View style={styles.timeBadge}>
+                        <Ionicons name="flash" size={14} color="#FFF" />
+                        <Text style={styles.timeBadgeText}>TODAY • 3 MINUTES</Text>
+                      </View>
+                      <Text style={styles.goalCategoryBadge}>
+                        {generatedGoal.category.toUpperCase()}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.heroGoalTitle}>{generatedGoal.title}</Text>
+
+                    <View style={styles.taskSpotlight}>
+                      <View style={styles.taskSpotlightIcon}>
+                        <Ionicons name="play" size={20} color="#E88C44" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.taskSpotlightEyebrow}>DAY 1 ACTION</Text>
+                        <Text style={styles.taskSpotlightText}>
+                          {generatedGoal.tasks[0]?.title}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Buddy endorsement line */}
+                    <View style={styles.buddyEndorsement}>
+                      <Image
+                        source={BUDDY_MASCOTS[selectedBuddy]}
+                        style={styles.buddySmallAvatar}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.buddyEndorsementText}>
+                        {selectedBuddy === 'hype' &&
+                          "Knock this out today, and you're officially on a streak. Let's make it real! 🔥"}
+                        {selectedBuddy === 'soft' &&
+                          "Just this one small task. No stress, no rush. You've got this 🤍"}
+                        {selectedBuddy === 'savage' &&
+                          "It's 3 minutes. If you can't do this, we need to have a serious talk 😌"}
+                      </Text>
+                    </View>
+
+                    {/* Upcoming roadmap glimpse */}
+                    <View style={styles.roadmapGlimpse}>
+                      <Text style={styles.roadmapHeading}>UPCOMING STEPS IN GLOWGOAL</Text>
+                      {generatedGoal.tasks.slice(1, 4).map((t, idx) => (
+                        <View key={t.id} style={styles.roadmapRow}>
+                          <Text style={styles.roadmapIndex}>0{idx + 2}</Text>
+                          <Text style={styles.roadmapText} numberOfLines={1}>
+                            {t.title}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Dual Action Buttons: Guest Mode vs Create Account */}
+                  <View style={styles.launchButtonsContainer}>
+                    <Pressable
+                      onPress={() => handleLaunch('guest')}
+                      disabled={isSaving}
+                      style={({ pressed }) => [
+                        styles.primaryButton,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      {isSaving ? (
+                        <ActivityIndicator color="#2A2E22" />
+                      ) : (
+                        <>
+                          <Text style={styles.primaryButtonText}>
+                            Start Crushing It (Guest Mode)
+                          </Text>
+                          <Ionicons name="arrow-forward" size={18} color="#2A2E22" />
+                        </>
+                      )}
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => handleLaunch('signup')}
+                      disabled={isSaving}
+                      style={({ pressed }) => [
+                        styles.secondaryOutlineButton,
+                        pressed && styles.buttonPressed,
+                      ]}
+                    >
+                      <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+                      <Text style={styles.secondaryOutlineButtonText}>
+                        Save & Create Free Account
+                      </Text>
+                    </Pressable>
+
+                    <Text style={styles.disclaimerText}>
+                      No credit card required. You can always sign up later to sync across devices.
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    paddingBottom: 18,
   },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topAction: {
-    color: '#FFF8F2',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  main: {
+  safe: {
     flex: 1,
-    justifyContent: 'center',
-    gap: 24,
   },
-  mainWide: {
+  keyboardWrap: {
+    flex: 1,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'web' ? 16 : 8,
+    paddingBottom: 12,
+  },
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  textSection: {
-    alignItems: 'center',
-  },
-  textSectionWide: {
-    flex: 1,
-    alignItems: 'flex-start',
-    paddingRight: 32,
-  },
-  eyebrowPill: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 18,
-  },
-  eyebrowText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    textAlign: 'center',
     marginBottom: 14,
-    maxWidth: 460,
   },
-  subtitle: {
-    color: '#FFF8F2',
-    textAlign: 'center',
-    maxWidth: 420,
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
-  previewArea: {
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  previewAreaMobile: {
-    width: '100%',
-    minHeight: 360,
-    alignSelf: 'center',
-  },
-  previewAreaWide: {
-    width: 460,
-    minHeight: 380,
-    alignSelf: 'center',
-  },
-  page: {
-    flex: 1,
-    justifyContent: 'center',
+  backButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  previewFrame: {
-    flex: 1,
-    minHeight: 320,
-    justifyContent: 'center',
-  },
-  bgGlowOne: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 999,
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.12)',
-    top: 20,
-    left: -2,
   },
-  bgGlowTwo: {
-    position: 'absolute',
-    width: 110,
-    height: 110,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    bottom: 28,
-    right: 8,
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
-  progressBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 10,
-    zIndex: 5,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
-    shadowColor: '#8D4B1F',
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+  skipButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  progressBadgeText: {
-    color: '#E88C44',
+  skipButtonText: {
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
   },
-  taskStackCardBack: {
-    position: 'absolute',
-    top: 78,
-    left: 38,
-    right: 38,
-    height: 220,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  taskStackCardMid: {
-    position: 'absolute',
-    top: 60,
-    left: 28,
-    right: 28,
-    height: 240,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-  },
-  taskMainCard: {
-    marginHorizontal: 12,
-    backgroundColor: 'rgba(255,255,255,0.24)',
-    borderRadius: 30,
-    padding: 22,
-    minHeight: 310,
-    justifyContent: 'center',
-    shadowColor: '#8D4B1F',
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  previewHeading: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '900',
-    marginBottom: 6,
-    textAlign: 'center',
-  },
-  previewSubheading: {
-    color: '#FFF8F2',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  taskFancyRow: {
+  progressContainer: {
     flexDirection: 'row',
+    gap: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+  },
+  progressBarActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  progressBarInactive: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.24)',
-    paddingVertical: 15,
+  },
+  scrollContentDesktop: {
+    paddingHorizontal: 32,
+    paddingTop: 24,
+  },
+  stepContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  badgeWrap: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: 14,
-    borderRadius: 20,
+    paddingVertical: 6,
+    borderRadius: 999,
     marginBottom: 12,
   },
-  taskCheckCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  taskCheckText: {
-    color: '#E88C44',
-    fontWeight: '900',
-    fontSize: 13,
-  },
-  taskCheckCircleSoft: {
-    width: 24,
-    height: 24,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    marginRight: 12,
-  },
-  taskTextWrap: {
-    flex: 1,
-  },
-  taskMainText: {
+  badgeText: {
     color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  stepHeading: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.5,
+  },
+  stepSubheading: {
     fontSize: 15,
+    lineHeight: 22,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+    maxWidth: 520,
+    marginBottom: 24,
+  },
+  optionsList: {
+    width: '100%',
+    gap: 12,
+    marginBottom: 24,
+  },
+  cardPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    gap: 14,
+  },
+  frictionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    gap: 14,
+  },
+  cardPillActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardPillInactive: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  cardEmoji: {
+    fontSize: 26,
+  },
+  frictionEmoji: {
+    fontSize: 30,
+  },
+  cardPillTitle: {
+    fontSize: 16,
     fontWeight: '800',
     marginBottom: 2,
   },
-  taskSubText: {
-    color: '#FFF8F2',
+  cardPillSubtitle: {
     fontSize: 12,
-  },
-  motivationStrip: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    marginTop: 8,
-  },
-  motivationStripText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
     fontWeight: '600',
   },
-  sparkDot: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: '#FFF9E8',
+  textDark: {
+    color: '#2A2E22',
   },
-  sparkDotSmall: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#FFF9E8',
+  textLight: {
+    color: '#FFFFFF',
   },
-  feedbackGlow: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: 240,
-    height: 240,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+  textDarkDim: {
+    color: 'rgba(42,46,34,0.65)',
   },
-  feedbackCoreCard: {
-    alignSelf: 'center',
-    width: '88%',
-    minHeight: 250,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.20)',
+  textLightDim: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  radioCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 22,
-    shadowColor: '#8D4B1F',
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
   },
-  buddyAvatar: {
-    width: 74,
-    height: 74,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
+  radioCircleActive: {
+    borderColor: '#353B2C',
   },
-  buddyAvatarEmoji: {
-    fontSize: 28,
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#353B2C',
   },
-  popupWrap: {
-    position: 'absolute',
-    zIndex: 5,
+  customInputContainer: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  popupBubble: {
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    maxWidth: 170,
-    shadowColor: '#8D4B1F',
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
-  },
-  popupText: {
-    fontSize: 14,
-    lineHeight: 21,
+  customTextInput: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 14,
+    marginBottom: 12,
   },
-  popupGood: {
-    backgroundColor: '#FFFFFF',
-  },
-  popupGoodText: {
-    color: '#E88C44',
-  },
-  popupRoast: {
-    backgroundColor: 'rgba(255,255,255,0.24)',
-  },
-  popupRoastText: {
-    color: '#FFFFFF',
-  },
-  popupSoft: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  popupSoftText: {
-    color: '#FFFFFF',
-  },
-  streakGlow: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: 250,
-    height: 250,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-  },
-  streakMainCard: {
-    marginHorizontal: 12,
-    backgroundColor: 'rgba(255,255,255,0.24)',
-    borderRadius: 30,
-    padding: 22,
-    minHeight: 310,
-    justifyContent: 'center',
-    shadowColor: '#8D4B1F',
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  streakHero: {
-    alignItems: 'center',
-    marginBottom: 18,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 22,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-  },
-  streakHeroText: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '900',
-    marginBottom: 4,
-  },
-  streakHeroSub: {
-    color: '#FFF8F2',
-    fontSize: 14,
-  },
-  streakGrid: {
+  categoryPickerRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  categoryChipActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  categoryChipText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  categoryChipTextActive: {
+    color: '#2A2E22',
+    fontWeight: '800',
+  },
+  liveStage: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  speechBubble: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    maxWidth: 480,
+    width: '94%',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    marginBottom: 14,
+  },
+  speechTagBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#353B2C',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  speechTagText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  speechText: {
+    color: '#2A2E22',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  mascotWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  mascotImage: {
+    width: 170,
+    height: 170,
+  },
+  buddyGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginBottom: 24,
+  },
+  buddyOptionCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 20,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  buddyOptionCardActive: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderColor: '#FFFFFF',
+  },
+  buddyIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  buddyIconText: {
+    fontSize: 20,
+  },
+  buddyOptionTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  buddyOptionTagline: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  activeCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: '#4CAF50',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  microWinHeroCard: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderRadius: 28,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    marginBottom: 24,
+  },
+  microWinHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#E88C44',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  timeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  goalCategoryBadge: {
+    color: '#828C6A',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  heroGoalTitle: {
+    color: '#2A2E22',
+    fontSize: 22,
+    fontWeight: '900',
     marginBottom: 16,
   },
-  streakChip: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+  taskSpotlight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#FED7AA',
+    marginBottom: 16,
+  },
+  taskSpotlightIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#E88C44',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  streakChipActive: {
-    backgroundColor: 'rgba(255,255,255,0.38)',
+  taskSpotlightEyebrow: {
+    color: '#C2410C',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 2,
   },
-  streakChipText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  taskSpotlightText: {
+    color: '#431407',
+    fontSize: 15,
     fontWeight: '800',
+    lineHeight: 20,
   },
-  bottomPanel: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderRadius: 28,
-    padding: 12,
-  },
-  dotsRow: {
+  buddyEndorsement: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 16,
+  },
+  buddySmallAvatar: {
+    width: 38,
+    height: 38,
+  },
+  buddyEndorsementText: {
+    flex: 1,
+    color: '#4A5568',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  roadmapGlimpse: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.08)',
+    paddingTop: 14,
+    gap: 8,
+  },
+  roadmapHeading: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#A0AEC0',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  roadmapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#ffffff',
+  roadmapIndex: {
+    color: '#718096',
+    fontSize: 12,
+    fontWeight: '800',
   },
-  buttonRow: {
-    flexDirection: 'row',
+  roadmapText: {
+    flex: 1,
+    color: '#4A5568',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  launchButtonsContainer: {
+    width: '100%',
     gap: 12,
+    alignItems: 'center',
   },
   primaryButton: {
-    flex: 1,
+    width: '100%',
+    height: 58,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    alignItems: 'center',
-  },
-  primaryButtonActive: {
-    backgroundColor: '#E88C44',
-  },
-  primaryButtonText: {
-    color: '#E88C44',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  primaryButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  secondaryButton: {
-    flex: 1,
-    borderRadius: 22,
+    borderRadius: 29,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-    paddingVertical: 16,
-    backgroundColor: 'transparent',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  secondaryButtonActive: {
-    backgroundColor: '#FFFFFF',
+  buttonPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
-  secondaryButtonText: {
-    color: '#FFFFFF',
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  primaryButtonText: {
+    color: '#2A2E22',
     fontSize: 16,
+    fontWeight: '900',
+  },
+  secondaryOutlineButton: {
+    width: '100%',
+    height: 54,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 27,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  secondaryOutlineButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '800',
   },
-  secondaryButtonTextActive: {
-    color: '#E88C44',
+  disclaimerText: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 12,
+    textAlign: 'center',
+    maxWidth: 420,
+    marginTop: 4,
   },
-  progressWrap: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 16,
-},
-progressTrack: {
-  flex: 1,
-  height: 10,
-  borderRadius: 999,
-  backgroundColor: 'rgba(255,255,255,0.2)',
-  overflow: 'hidden',
-  marginRight: 10,
-},
-progressFill: {
-  height: '100%',
-  borderRadius: 999,
-  backgroundColor: '#FFFFFF',
-},
-progressText: {
-  color: '#FFFFFF',
-  fontSize: 12,
-  fontWeight: '800',
-},
-successBurst: {
-  position: 'absolute',
-  top: 10,
-  left: 12,
-  backgroundColor: '#FFFFFF',
-  borderRadius: 999,
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-},
-successBurstText: {
-  color: '#E88C44',
-  fontSize: 12,
-  fontWeight: '800',
-},
-liveBuddyOrb: {
-  width: 86,
-  height: 86,
-  borderRadius: 999,
-  backgroundColor: '#FFFFFF',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginTop: 10,
-  marginBottom: 16,
-  alignSelf: 'center',
-},
-liveBuddyOrbEmoji: {
-  fontSize: 32,
-},
-personalityChips: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  justifyContent: 'center',
-  gap: 8,
-},
-personalityChip: {
-  backgroundColor: 'rgba(255,255,255,0.18)',
-  borderRadius: 999,
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-},
-personalityChipText: {
-  color: '#FFFFFF',
-  fontSize: 12,
-  fontWeight: '700',
-},
-shimmerBar: {
-  position: 'absolute',
-  width: 38,
-  height: 120,
-  backgroundColor: 'rgba(255,255,255,0.18)',
-  top: -10,
-},
 });

@@ -12,6 +12,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getGuestGoals, saveGuestGoals } from './guest-storage';
 
 export type GoalTask = {
   id: string;
@@ -43,32 +44,35 @@ function getCurrentUserId() {
   return auth.currentUser?.uid ?? null;
 }
 
-async function requireUserId() {
-  const userId = getCurrentUserId();
-
-  if (!userId) {
-    throw new Error('No signed-in user found.');
-  }
-
-  return userId;
-}
-
 export function calculateProgress(tasks: GoalTask[]) {
   const completedCount = tasks.filter((task) => task.completed).length;
   return tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 }
 
 export async function getGoals(): Promise<GoalItem[]> {
-  const userId = await requireUserId();
-  const goalsRef = collection(db, 'users', userId, 'goals');
-  const goalsQuery = query(goalsRef, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(goalsQuery);
+  const userId = getCurrentUserId();
+  if (!userId) {
+    return getGuestGoals();
+  }
 
-  return snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+  try {
+    const goalsRef = collection(db, 'users', userId, 'goals');
+    const goalsQuery = query(goalsRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(goalsQuery);
+    return snapshot.docs.map((docSnap) => docSnap.data() as GoalItem);
+  } catch (error) {
+    console.warn('Failed to fetch from Firestore, falling back to guest goals:', error);
+    return getGuestGoals();
+  }
 }
 
-export async function getGoalById(goalId: string) {
-  const userId = await requireUserId();
+export async function getGoalById(goalId: string): Promise<GoalItem | null> {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const goals = await getGuestGoals();
+    return goals.find((g) => g.id === goalId) ?? null;
+  }
+
   const goalRef = doc(db, 'users', userId, 'goals', goalId);
   const snapshot = await getDoc(goalRef);
 
@@ -83,7 +87,7 @@ export function subscribeToGoals(
   const userId = getCurrentUserId();
 
   if (!userId) {
-    onGoalsChange([]);
+    getGuestGoals().then(onGoalsChange).catch(() => onGoalsChange([]));
     return () => {};
   }
 
@@ -103,10 +107,21 @@ export function subscribeToGoals(
   );
 }
 
-export async function saveGoal(goal: GoalItem) {
-  const userId = await requireUserId();
-  const goalRef = doc(db, 'users', userId, 'goals', goal.id);
+export async function saveGoal(goal: GoalItem): Promise<GoalItem> {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const goals = await getGuestGoals();
+    const existingIndex = goals.findIndex((g) => g.id === goal.id);
+    if (existingIndex >= 0) {
+      goals[existingIndex] = goal;
+    } else {
+      goals.unshift(goal);
+    }
+    await saveGuestGoals(goals);
+    return goal;
+  }
 
+  const goalRef = doc(db, 'users', userId, 'goals', goal.id);
   await setDoc(goalRef, goal);
   return goal;
 }
@@ -116,22 +131,34 @@ export async function addGoal(goal: GoalItem) {
   return goal;
 }
 
-export async function deleteGoal(goalId: string) {
-  const userId = await requireUserId();
-  const goalRef = doc(db, 'users', userId, 'goals', goalId);
+export async function deleteGoal(goalId: string): Promise<void> {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const goals = await getGuestGoals();
+    const filtered = goals.filter((g) => g.id !== goalId);
+    await saveGuestGoals(filtered);
+    return;
+  }
 
+  const goalRef = doc(db, 'users', userId, 'goals', goalId);
   await deleteDoc(goalRef);
 }
 
-export async function updateGoal(goalId: string, updates: Partial<GoalItem>) {
-  const userId = await requireUserId();
-  const goalRef = doc(db, 'users', userId, 'goals', goalId);
+export async function updateGoal(goalId: string, updates: Partial<GoalItem>): Promise<GoalItem | null> {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const goals = await getGuestGoals();
+    const nextGoals = goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+    await saveGuestGoals(nextGoals);
+    return nextGoals.find((g) => g.id === goalId) ?? null;
+  }
 
+  const goalRef = doc(db, 'users', userId, 'goals', goalId);
   await updateDoc(goalRef, updates);
   return getGoalById(goalId);
 }
 
-export async function toggleTask(goalId: string, taskId: string) {
+export async function toggleTask(goalId: string, taskId: string): Promise<GoalItem | null> {
   const goal = await getGoalById(goalId);
 
   if (!goal) return null;
@@ -154,15 +181,37 @@ export async function toggleTask(goalId: string, taskId: string) {
     progress: calculateProgress(updatedTasks),
   };
 
-  const userId = await requireUserId();
-  const goalRef = doc(db, 'users', userId, 'goals', goalId);
+  const userId = getCurrentUserId();
+  if (!userId) {
+    const goals = await getGuestGoals();
+    const nextGoals = goals.map((g) => (g.id === goalId ? updatedGoal : g));
+    await saveGuestGoals(nextGoals);
+    return updatedGoal;
+  }
 
+  const goalRef = doc(db, 'users', userId, 'goals', goalId);
   await updateDoc(goalRef, {
     tasks: updatedGoal.tasks,
     progress: updatedGoal.progress,
   });
 
   return updatedGoal;
+}
+
+export async function syncGuestGoalsToFirebase(): Promise<number> {
+  const userId = getCurrentUserId();
+  if (!userId) return 0;
+
+  const guestGoals = await getGuestGoals();
+  if (!guestGoals.length) return 0;
+
+  for (const goal of guestGoals) {
+    const goalRef = doc(db, 'users', userId, 'goals', goal.id);
+    await setDoc(goalRef, goal, { merge: true });
+  }
+
+  await saveGuestGoals([]);
+  return guestGoals.length;
 }
 
 function toDateKey(dateValue: string | Date) {

@@ -134,9 +134,18 @@ export default function DashboardScreen() {
       unsubscribePreferences?.();
 
       if (!user) {
-        setGoals([]);
-        setStreak(0);
-        setBuddy('hype');
+        getGoals().then((liveGoals) => {
+          setGoals(liveGoals);
+          setStreak(calculateStreak(liveGoals));
+        }).catch(() => {
+          setGoals([]);
+          setStreak(0);
+        });
+        getUserPreferences().then((prefs) => {
+          setBuddy(prefs?.buddy ?? 'hype');
+        }).catch(() => {
+          setBuddy('hype');
+        });
         return;
       }
 
@@ -313,6 +322,23 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               </View>
+
+              {!currentUser && (
+                <View style={styles.guestBanner}>
+                  <View style={styles.guestBannerLeft}>
+                    <Ionicons name="sparkles" size={16} color="#E88C44" />
+                    <Text style={styles.guestBannerText}>
+                      Guest session active • Save your streak & sync across devices
+                    </Text>
+                  </View>
+                  <Pressable
+                    style={styles.guestBannerButton}
+                    onPress={() => router.push('/signup')}
+                  >
+                    <Text style={styles.guestBannerButtonText}>Sign Up Free</Text>
+                  </Pressable>
+                </View>
+              )}
 
               <View style={styles.heroCard}>
                 <View
@@ -982,5 +1008,42 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '900',
     fontSize: 14,
+  },
+  guestBanner: {
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1.5,
+    borderColor: '#FED7AA',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  guestBannerLeft: {
+    flex: 1,
+    minWidth: 200,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guestBannerText: {
+    color: '#7C2D12',
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
+  },
+  guestBannerButton: {
+    backgroundColor: '#E88C44',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  guestBannerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
   },
 });
