@@ -313,7 +313,7 @@ export default function DashboardScreen() {
               <View style={styles.header}>
                 <View>
                   <Text style={styles.greeting}>hey, {userName} ✨</Text>
-                  <Text style={styles.subtitle}>your brand is growing today.</Text>
+                  <Text style={styles.subtitle}>small steps count. let's make one happen.</Text>
                 </View>
 
                 <View style={styles.profileCircle}>
@@ -355,7 +355,7 @@ export default function DashboardScreen() {
                     </View>
 
                     <Text style={styles.heroTitle} numberOfLines={2}>
-                      keep the momentum
+                      make today count
                     </Text>
 
                     <Text style={styles.heroDescription}>
@@ -418,7 +418,7 @@ export default function DashboardScreen() {
 
               <View style={styles.goalsSection}>
                 <View style={styles.goalsHeader}>
-                  <Text style={styles.goalsTitle}>your goals</Text>
+                  <Text style={styles.goalsTitle}>in progress</Text>
 
                   <View style={styles.goalsHeaderRight}>
                     {goals.length > 0 && (
@@ -656,16 +656,16 @@ const styles = StyleSheet.create({
   },
   sidebarNav: { gap: 15 },
 
-  contentContainer: { width: '100%', maxWidth: 800, alignSelf: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 150 },
+  contentContainer: { width: '100%', maxWidth: 920, alignSelf: 'center' },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 140 },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  greeting: { fontSize: 28, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
+  greeting: { fontSize: 30, fontWeight: '900', color: '#211A3A', letterSpacing: -1.2 },
   subtitle: { fontSize: 14, color: 'rgba(33,26,58,0.68)', fontWeight: '500' },
   profileCircle: {
     width: 44,
@@ -677,14 +677,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(109,74,255,0.18)',
   },
-  profileInitial: { fontWeight: '800', color: '#FFF' },
+  profileInitial: { fontWeight: '900', color: '#6D4AFF' },
 
   heroCard: {
     backgroundColor: '#211A3A',
-    borderRadius: 28,
-    padding: 24,
+    borderRadius: 30,
+    padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(109,74,255,0.12)',
+    borderColor: 'rgba(215,255,100,0.18)',
   },
   heroContent: {
     flexDirection: 'row',
@@ -707,7 +707,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -1,
@@ -744,14 +744,14 @@ const styles = StyleSheet.create({
   },
   mascotImage: { width: '100%', height: '100%' },
 
-  statsGrid: { flexDirection: 'row', gap: 16, marginTop: 16, marginBottom: 22 },
+  statsGrid: { flexDirection: 'row', gap: 14, marginTop: 18, marginBottom: 30 },
   statCard: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 22,
+    padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(33,26,58,0.06)',
+    borderColor: '#E5E0F2',
   },
   statCardActive: {
     borderColor: 'rgba(255,213,128,0.3)',
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 4,
   },
-  statValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
+  statValue: { fontSize: 28, fontWeight: '900', color: '#211A3A' },
   statValueActive: { color: '#D7FF64' },
 
   goalsSection: {
@@ -791,8 +791,8 @@ const styles = StyleSheet.create({
   goalsTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#FFF',
-    textTransform: 'lowercase',
+    color: '#211A3A',
+    textTransform: 'none',
   },
   goalsCount: {
     minWidth: 28,
@@ -802,32 +802,32 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     overflow: 'hidden',
     backgroundColor: 'rgba(109,74,255,0.08)',
-    color: '#FFF',
+    color: '#211A3A',
     fontWeight: '800',
     paddingTop: Platform.OS === 'android' ? 4 : 6,
   },
   seeAllText: {
-    color: '#D7FF64',
+    color: '#6D4AFF',
     fontWeight: '800',
     fontSize: 13,
     textTransform: 'lowercase',
   },
 
   emptyState: {
-    backgroundColor: 'rgba(109,74,255,0.06)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 22,
     borderWidth: 1,
     borderColor: 'rgba(109,74,255,0.12)',
   },
   emptyStateTitle: {
-    color: '#FFF',
+    color: '#211A3A',
     fontSize: 16,
     fontWeight: '900',
     marginBottom: 6,
   },
   emptyStateText: {
-    color: 'rgba(255,255,255,0.75)',
+    color: '#77718C',
     lineHeight: 20,
   },
 
@@ -868,9 +868,9 @@ const styles = StyleSheet.create({
   },
   goalCardTitle: {
     color: '#211A3A',
-    fontSize: 17,
-    fontWeight: '900',
-    lineHeight: 23,
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 25,
     marginBottom: 8,
     textTransform: 'lowercase',
   },
@@ -888,7 +888,7 @@ const styles = StyleSheet.create({
   },
   goalProgressTrack: {
     flex: 1,
-    height: 10,
+    height: 8,
     backgroundColor: '#E9E5F5',
     borderRadius: 999,
     overflow: 'hidden',
@@ -922,7 +922,9 @@ const styles = StyleSheet.create({
   mobileNav: {
     height: 70,
     backgroundColor: '#FFFFFF',
-    borderRadius: 25,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E5E0F2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
