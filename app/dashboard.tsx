@@ -754,9 +754,9 @@ const styles = StyleSheet.create({
     borderColor: '#E5E0F2',
   },
   statCardActive: {
-    borderColor: 'rgba(255,213,128,0.3)',
-    shadowColor: '#D7FF64',
-    shadowOpacity: 0.2,
+    borderColor: 'rgba(109,74,255,0.28)',
+    shadowColor: '#6D4AFF',
+    shadowOpacity: 0.12,
     shadowRadius: 15,
   },
   statHeader: {
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: { fontSize: 28, fontWeight: '900', color: '#211A3A' },
-  statValueActive: { color: '#D7FF64' },
+  statValueActive: { color: '#6D4AFF' },
 
   goalsSection: {
     marginTop: 4,
