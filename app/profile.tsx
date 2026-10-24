@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#F0ECFF',
+    color: '#211A3A',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -855,7 +855,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: '#E5E0F2',
     marginBottom: 16,
   },
   avatarText: {
