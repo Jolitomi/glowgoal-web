@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 40,
     fontWeight: '900',
-    color: '#F0ECFF',
+    color: '#6D4AFF',
   },
   onlineBadge: {
     position: 'absolute',
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#F0ECFF',
+    color: '#211A3A',
     letterSpacing: -1,
   },
   userEmail: {
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#F0ECFF',
+    color: '#211A3A',
     marginBottom: 12,
     textTransform: 'lowercase',
   },
