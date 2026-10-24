@@ -625,7 +625,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name="color-palette"
                   size={40}
-                  color="#848F73"
+                  color="#6D4AFF"
                   style={{ marginBottom: 10 }}
                 />
                 <Text style={styles.modalSubText}>
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#F0ECFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 40,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
   },
   onlineBadge: {
     position: 'absolute',
@@ -877,17 +877,17 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     letterSpacing: -1,
   },
   userEmail: {
     fontSize: 14,
-    color: 'rgba(255,247,239,0.65)',
+    color: '#77718C',
     marginTop: 4,
   },
 
   heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#211A3A',
     borderRadius: 28,
     padding: 24,
     marginBottom: 30,
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     marginTop: 4,
     textTransform: 'lowercase',
   },
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     marginBottom: 12,
     textTransform: 'lowercase',
   },
@@ -955,12 +955,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(90,61,36,0.05)',
+    backgroundColor: 'rgba(109,74,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   settingLabel: {
-    color: '#473C34',
+    color: '#211A3A',
     fontWeight: '800',
     fontSize: 16,
   },
@@ -970,7 +970,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   settingValue: {
-    color: '#848F73',
+    color: '#6D4AFF',
     fontWeight: '800',
     fontSize: 14,
   },
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     padding: 18,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,107,107,0.1)',
+    backgroundColor: 'rgba(230,80,104,0.10)',
   },
   signOutText: {
     color: '#FF6B6B',
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
   },
   versionText: {
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.28)',
+    color: '#89839D',
     fontSize: 12,
     marginTop: 40,
     fontWeight: '600',
@@ -1053,7 +1053,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#F7F1E8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 32,
     padding: 30,
     width: '90%',
@@ -1076,14 +1076,14 @@ const styles = StyleSheet.create({
   },
   modalSubText: {
     fontSize: 16,
-    color: '#8D8176',
+    color: '#77718C',
     textAlign: 'center',
     marginBottom: 20,
     fontWeight: '600',
   },
   faqContainer: {
     width: '100%',
-    backgroundColor: 'rgba(90,61,36,0.03)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
     padding: 15,
     borderRadius: 20,
     marginBottom: 15,
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
   },
   modalOption: {
     width: '100%',
-    backgroundColor: 'rgba(90,61,36,0.03)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
     padding: 20,
     borderRadius: 20,
     flexDirection: 'row',
@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalOptionActive: {
-    backgroundColor: '#FFF7EF',
+    backgroundColor: '#F0ECFF',
     borderColor: '#D7FF64',
     borderWidth: 1,
   },
@@ -1142,7 +1142,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   modalCloseText: {
-    color: '#8D8176',
+    color: '#77718C',
     fontWeight: '800',
     textTransform: 'lowercase',
     opacity: 0.6,
