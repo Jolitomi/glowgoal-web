@@ -225,9 +225,9 @@ export default function ProgressScreen() {
                 <View style={styles.calendarHeader}>
                   <Text style={styles.calendarTitle}>glow calendar</Text>
                   <View style={styles.calendarActions}>
-                    <Pressable onPress={() => setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() - 1, 1))}><Ionicons name="chevron-back" size={20} color="#5A3D24" /></Pressable>
+                    <Pressable onPress={() => setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() - 1, 1))}><Ionicons name="chevron-back" size={20} color="#211A3A" /></Pressable>
                     <Text style={styles.monthLabel}>{getMonthLabel(activeMonth)}</Text>
-                    <Pressable onPress={() => setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() + 1, 1))}><Ionicons name="chevron-forward" size={20} color="#5A3D24" /></Pressable>
+                    <Pressable onPress={() => setActiveMonth(new Date(activeMonth.getFullYear(), activeMonth.getMonth() + 1, 1))}><Ionicons name="chevron-forward" size={20} color="#211A3A" /></Pressable>
                   </View>
                 </View>
 
@@ -292,7 +292,7 @@ function MetricCard({ label, value, sub, icon, style }: any) {
     <View style={[styles.metricCard, style]}>
       <View style={styles.metricTop}>
         <Text style={styles.metricLabel}>{label}</Text>
-        <Ionicons name={icon} size={18} color="#7B6B5D" />
+        <Ionicons name={icon} size={18} color="#77718C" />
       </View>
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricSub}>{sub}</Text>
@@ -306,9 +306,9 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
       <Ionicons 
         name={active ? icon : (`${icon}-outline` as any)} 
         size={isVertical ? 22 : 24} 
-        color={active ? (isVertical ? '#FFD580' : '#5A3D24') : (isVertical ? 'rgba(255,255,255,0.4)' : '#A4988D')} 
+        color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.4)' : '#89839D')} 
       />
-      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' })]}>
+      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' })]}>
         {label}
       </Text>
     </Pressable>
@@ -316,30 +316,30 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
-  loadingContainer: { flex: 1, backgroundColor: '#828C6A', alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#FFF', fontWeight: '700' },
+  loadingContainer: { flex: 1, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' },
+  loadingText: { color: '#211A3A', fontWeight: '700' },
 
   // UPDATED SIDEBAR
-  sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#6D7856', padding: 40, zIndex: 100 },
+  sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#171329', padding: 40, zIndex: 100 },
   sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 50, letterSpacing: -1 },
   sidebarNav: { gap: 15 },
 
-  contentContainer: { alignSelf: 'center' },
+  contentContainer: { width: '100%', maxWidth: 1040, alignSelf: 'center' },
   header: { marginBottom: 24 },
-  greeting: { fontSize: 32, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
-  subtitle: { color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
-  statsHeroRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
+  greeting: { fontSize: 32, fontWeight: '900', color: '#211A3A', letterSpacing: -1 },
+  subtitle: { color: '#77718C', fontWeight: '500' },
+  statsHeroRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
   statsHeroColumn: { flexDirection: 'column' },
   fullWidthCard: { width: '100%' },
-  ringCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 28, padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
+  ringCard: { flex: 1, backgroundColor: '#211A3A', borderRadius: 28, padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
   glowRing: { width: 140, height: 140, borderRadius: 70, borderWidth: 3, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  ringValue: { fontSize: 38, fontWeight: '900', color: '#FFF' },
-  ringLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
+  ringValue: { fontSize: 38, fontWeight: '900', color: '#FFFFFF' },
+  ringLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.72)', marginTop: 4 },
   
-  verdictCard: { flex: 1.5, backgroundColor: '#F4EBDD', borderRadius: 28, padding: 24, minHeight: 200, position: 'relative', overflow: 'visible', justifyContent: 'center' },
+  verdictCard: { flex: 1.5, backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, minHeight: 200, position: 'relative', overflow: 'visible', justifyContent: 'center' },
   mascotBadge: { position: 'absolute', top: -30, right: 15, width: 140, height: 140, borderRadius: 70, justifyContent: 'center', alignItems: 'center', elevation: 12 },
   buddyGlowEffect: {
     shadowColor: '#FFF',
@@ -351,35 +351,35 @@ const styles = StyleSheet.create({
   },
   mascotImg: { width: 95, height: 95 },
   verdictTextContainer: { maxWidth: '65%' },
-  verdictSub: { fontSize: 11, fontWeight: '800', color: '#7B6B5D', textTransform: 'uppercase', marginBottom: 8 },
-  verdictMain: { fontSize: 22, fontWeight: '900', color: '#463A31' },
+  verdictSub: { fontSize: 11, fontWeight: '800', color: '#77718C', textTransform: 'uppercase', marginBottom: 8 },
+  verdictMain: { fontSize: 22, fontWeight: '900', color: '#211A3A' },
   
   metricsGrid: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  metricCard: { backgroundColor: '#F4EBDD', borderRadius: 24, padding: 18, borderWidth: 1, borderColor: '#E7D7C1' },
+  metricCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, borderWidth: 1, borderColor: '#E5E0F2' },
   metricCardHalf: { flex: 1 },
   metricTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metricLabel: { fontSize: 11, fontWeight: '800', color: '#7B6B5D', textTransform: 'uppercase' },
-  metricValue: { fontSize: 24, fontWeight: '900', color: '#463A31', marginTop: 8 },
-  metricSub: { fontSize: 13, color: '#8C7B6C', marginTop: 6 },
-  calendarCard: { backgroundColor: '#F4EBDD', borderRadius: 28, padding: 16 },
+  metricLabel: { fontSize: 11, fontWeight: '800', color: '#77718C', textTransform: 'uppercase' },
+  metricValue: { fontSize: 24, fontWeight: '900', color: '#211A3A', marginTop: 8 },
+  metricSub: { fontSize: 13, color: '#77718C', marginTop: 6 },
+  calendarCard: { backgroundColor: '#FFFFFF', borderRadius: 28, padding: 16 },
   calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  calendarTitle: { fontSize: 18, fontWeight: '900', color: '#463A31' },
+  calendarTitle: { fontSize: 18, fontWeight: '900', color: '#211A3A' },
   calendarActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  monthLabel: { fontWeight: '800', color: '#5A3D24', minWidth: 110, textAlign: 'center' },
+  monthLabel: { fontWeight: '800', color: '#211A3A', minWidth: 110, textAlign: 'center' },
   weekHeader: { flexDirection: 'row', marginBottom: 12 },
-  weekHeaderText: { flex: 1, textAlign: 'center', fontWeight: '800', color: '#8C7B6C', fontSize: 11 },
+  weekHeaderText: { flex: 1, textAlign: 'center', fontWeight: '800', color: '#77718C', fontSize: 11 },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', width: '100%' },
-  calendarCell: { backgroundColor: '#FFF7EF', borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  calendarCell: { backgroundColor: '#F0ECFF', borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   calendarCellEmpty: { opacity: 0 },
-  calendarCellGlowSoft: { backgroundColor: 'rgba(255, 213, 128, 0.3)' },
-  calendarCellGlowMedium: { backgroundColor: 'rgba(255, 213, 128, 0.6)' },
-  calendarCellGlowStrong: { backgroundColor: '#FFD580' },
-  calendarCellToday: { borderColor: '#5A3D24', borderWidth: 2 },
-  calendarCellSelected: { borderColor: '#463A31', borderWidth: 1 },
-  calendarDayText: { fontWeight: '800', color: '#6C5C4F', fontSize: 13 },
-  dayDetailCard: { marginTop: 18, backgroundColor: '#FFF7EF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#E7D7C1' },
-  dayDetailTitle: { fontSize: 15, fontWeight: '900', color: '#463A31', marginBottom: 4 },
-  dayDetailBody: { color: '#7B6B5D', fontSize: 13, fontWeight: '600' },
+  calendarCellGlowSoft: { backgroundColor: 'rgba(109,74,255,0.12)' },
+  calendarCellGlowMedium: { backgroundColor: 'rgba(109,74,255,0.24)' },
+  calendarCellGlowStrong: { backgroundColor: '#D7FF64' },
+  calendarCellToday: { borderColor: '#211A3A', borderWidth: 2 },
+  calendarCellSelected: { borderColor: '#211A3A', borderWidth: 1 },
+  calendarDayText: { fontWeight: '800', color: '#77718C', fontSize: 13 },
+  dayDetailCard: { marginTop: 18, backgroundColor: '#F0ECFF', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#E5E0F2' },
+  dayDetailTitle: { fontSize: 15, fontWeight: '900', color: '#211A3A', marginBottom: 4 },
+  dayDetailBody: { color: '#77718C', fontSize: 13, fontWeight: '600' },
 
   // UPDATED PILL NAV BAR STYLES
   mobileNavWrapper: { position: 'absolute', bottom: 30, left: 20, right: 20, zIndex: 9999 },
@@ -388,6 +388,6 @@ const styles = StyleSheet.create({
   navItemVertical: { flexDirection: 'row', justifyContent: 'flex-start', padding: 12, borderRadius: 12, gap: 12, width: '100%' },
   navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   navLabel: { fontWeight: '700' },
-  navLabelMobile: { fontSize: 10, color: '#6D7856', marginTop: 4 },
+  navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
   navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
 });

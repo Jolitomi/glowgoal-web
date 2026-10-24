@@ -164,7 +164,7 @@ export default function CreateGoalScreen() {
             <View style={styles.contentContainer}>
               <View style={styles.pageHeader}>
                 <Pressable onPress={() => router.push('/goals')} style={styles.backButton}>
-                  <Ionicons name="chevron-back" size={22} color="#FFF7EF" />
+                  <Ionicons name="chevron-back" size={22} color="#F0ECFF" />
                 </Pressable>
 
                 <View style={styles.pageHeaderTextWrap}>
@@ -196,7 +196,7 @@ export default function CreateGoalScreen() {
                     ]}
                   >
                     <View style={styles.mascotGlow} />
-                    <Ionicons name="sparkles" size={54} color="#FFD580" />
+                    <Ionicons name="sparkles" size={54} color="#D7FF64" />
                   </Animated.View>
                 </View>
               </View>
@@ -227,7 +227,7 @@ export default function CreateGoalScreen() {
                         <Ionicons
                           name={cat.icon}
                           size={16}
-                          color={active ? '#5A3D24' : '#5C5248'}
+                          color={active ? '#211A3A' : '#77718C'}
                         />
                         <Text style={[styles.chipText, active && styles.chipTextActive]}>
                           {cat.label}
@@ -278,7 +278,7 @@ export default function CreateGoalScreen() {
                 ]}
               >
                 <Text style={styles.ctaText}>break this into steps</Text>
-                <Ionicons name="arrow-forward" size={18} color="#5A3D24" />
+                <Ionicons name="arrow-forward" size={18} color="#211A3A" />
               </Pressable>
             </View>
           </ScrollView>
@@ -347,18 +347,18 @@ function NavItem({
         color={
           active
             ? isVertical
-              ? '#FFD580'
-              : '#5A3D24'
+              ? '#D7FF64'
+              : '#211A3A'
             : isVertical
             ? 'rgba(255,255,255,0.4)'
-            : '#A4988D'
+            : '#89839D'
         }
       />
       <Text
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' }),
+          active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -368,7 +368,7 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
 
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 280,
-    backgroundColor: '#6D7856',
+    backgroundColor: '#171329',
     padding: 40,
     zIndex: 100,
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   sidebarNav: { gap: 15 },
 
   contentContainer: { width: '100%', maxWidth: 820, alignSelf: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 150 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 140 },
 
   pageHeader: {
     flexDirection: 'row',
@@ -406,14 +406,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#211A3A',
     textTransform: 'lowercase',
     letterSpacing: -0.5,
   },
   headerSubtext: {
     marginTop: 4,
     fontSize: 13,
-    color: 'rgba(255,247,239,0.75)',
+    color: '#77718C',
     lineHeight: 18,
   },
   backButton: {
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
 
   heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#211A3A',
     borderRadius: 26,
     padding: 22,
     borderWidth: 1,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   buddyBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#F5EDE3',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -463,14 +463,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 32,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
   heroDescription: {
     marginTop: 8,
     fontSize: 14,
     lineHeight: 21,
-    color: 'rgba(255,247,239,0.82)',
+    color: 'rgba(255,255,255,0.82)',
     maxWidth: 460,
   },
   mascotWrapper: {
@@ -484,11 +484,11 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: 'rgba(255,213,128,0.18)',
+    backgroundColor: 'rgba(109,74,255,0.16)',
   },
 
   formCard: {
-    backgroundColor: '#EFE6D8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 26,
     padding: 18,
     marginBottom: 18,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#5F5347',
+    color: '#77718C',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -511,10 +511,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#FBF7F1',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6DAC8',
-    color: '#473C34',
+    borderColor: '#E5E0F2',
+    color: '#211A3A',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -533,21 +533,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: '#FBF7F1',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E6DAC8',
+    borderColor: '#E5E0F2',
   },
   chipActive: {
-    backgroundColor: '#FFD580',
-    borderColor: '#FFD580',
+    backgroundColor: '#D7FF64',
+    borderColor: '#D7FF64',
   },
   chipText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#5C5248',
+    color: '#77718C',
   },
   chipTextActive: {
-    color: '#5A3D24',
+    color: '#211A3A',
   },
 
   formRow: {
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     height: 62,
     borderRadius: 22,
-    backgroundColor: '#FFD580',
+    backgroundColor: '#D7FF64',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#5A3D24',
+    color: '#211A3A',
   },
 
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   },
   navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   navLabel: { fontWeight: '700' },
-  navLabelMobile: { fontSize: 10, color: '#6D7856', marginTop: 4 },
+  navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
   navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
 
   mobileNavWrapper: {

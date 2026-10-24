@@ -313,7 +313,7 @@ export default function DashboardScreen() {
               <View style={styles.header}>
                 <View>
                   <Text style={styles.greeting}>hey, {userName} ✨</Text>
-                  <Text style={styles.subtitle}>your brand is growing today.</Text>
+                  <Text style={styles.subtitle}>small steps count. let's make one happen.</Text>
                 </View>
 
                 <View style={styles.profileCircle}>
@@ -326,7 +326,7 @@ export default function DashboardScreen() {
               {!currentUser && (
                 <View style={styles.guestBanner}>
                   <View style={styles.guestBannerLeft}>
-                    <Ionicons name="sparkles" size={16} color="#E88C44" />
+                    <Ionicons name="sparkles" size={16} color="#6D4AFF" />
                     <Text style={styles.guestBannerText}>
                       Guest session active • Save your streak & sync across devices
                     </Text>
@@ -355,7 +355,7 @@ export default function DashboardScreen() {
                     </View>
 
                     <Text style={styles.heroTitle} numberOfLines={2}>
-                      keep the momentum
+                      make today count
                     </Text>
 
                     <Text style={styles.heroDescription}>
@@ -367,7 +367,7 @@ export default function DashboardScreen() {
                       onPress={() => router.push('/create-goal')}
                     >
                       <Text style={styles.mainActionText}>New Goal</Text>
-                      <Ionicons name="add-circle" size={18} color="#5A3D24" />
+                      <Ionicons name="add-circle" size={18} color="#211A3A" />
                     </Pressable>
                   </View>
 
@@ -395,7 +395,7 @@ export default function DashboardScreen() {
                     <Text style={styles.statLabel}>WIN STREAK</Text>
                     {streak > 0 && (
                       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                        <Ionicons name="flame" size={16} color="#FFD580" />
+                        <Ionicons name="flame" size={16} color="#D7FF64" />
                       </Animated.View>
                     )}
                   </View>
@@ -418,7 +418,7 @@ export default function DashboardScreen() {
 
               <View style={styles.goalsSection}>
                 <View style={styles.goalsHeader}>
-                  <Text style={styles.goalsTitle}>your goals</Text>
+                  <Text style={styles.goalsTitle}>in progress</Text>
 
                   <View style={styles.goalsHeaderRight}>
                     {goals.length > 0 && (
@@ -612,18 +612,18 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
         color={
           active
             ? isVertical
-              ? '#FFD580'
-              : '#5A3D24'
+              ? '#D7FF64'
+              : '#211A3A'
             : isVertical
-              ? 'rgba(255,255,255,0.4)'
-              : '#A4988D'
+              ? 'rgba(255,255,255,0.48)'
+              : '#89839D'
         }
       />
       <Text
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' }),
+          active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -633,7 +633,7 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
 
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 280,
-    backgroundColor: '#6D7856',
+    backgroundColor: '#171329',
     padding: 40,
     zIndex: 100,
   },
@@ -656,35 +656,35 @@ const styles = StyleSheet.create({
   },
   sidebarNav: { gap: 15 },
 
-  contentContainer: { width: '100%', maxWidth: 800, alignSelf: 'center' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 150 },
+  contentContainer: { width: '100%', maxWidth: 920, alignSelf: 'center' },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 140 },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 24,
   },
-  greeting: { fontSize: 28, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  greeting: { fontSize: 30, fontWeight: '900', color: '#211A3A', letterSpacing: -1.2 },
+  subtitle: { fontSize: 14, color: 'rgba(33,26,58,0.68)', fontWeight: '500' },
   profileCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(109,74,255,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(109,74,255,0.18)',
   },
-  profileInitial: { fontWeight: '800', color: '#FFF' },
+  profileInitial: { fontWeight: '900', color: '#6D4AFF' },
 
   heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 28,
-    padding: 24,
+    backgroundColor: '#211A3A',
+    borderRadius: 30,
+    padding: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(215,255,100,0.18)',
   },
   heroContent: {
     flexDirection: 'row',
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   },
   heroTextSection: { flex: 1 },
   buddyBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(109,74,255,0.12)',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -703,13 +703,13 @@ const styles = StyleSheet.create({
   buddyBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FFF',
+    color: '#FFFFFF',
     textTransform: 'uppercase',
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '900',
-    color: '#FFF',
+    color: '#FFFFFF',
     letterSpacing: -1,
     lineHeight: 36,
     textTransform: 'lowercase',
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   mainAction: {
-    backgroundColor: '#FFD580',
+    backgroundColor: '#D7FF64',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 16,
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   mainActionText: {
-    color: '#5A3D24',
+    color: '#211A3A',
     fontWeight: '900',
     marginRight: 6,
     fontSize: 14,
@@ -744,18 +744,18 @@ const styles = StyleSheet.create({
   },
   mascotImage: { width: '100%', height: '100%' },
 
-  statsGrid: { flexDirection: 'row', gap: 16, marginTop: 16, marginBottom: 22 },
+  statsGrid: { flexDirection: 'row', gap: 14, marginTop: 18, marginBottom: 30 },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderRadius: 24,
-    padding: 20,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 22,
+    padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: '#E5E0F2',
   },
   statCardActive: {
     borderColor: 'rgba(255,213,128,0.3)',
-    shadowColor: '#FFD580',
+    shadowColor: '#D7FF64',
     shadowOpacity: 0.2,
     shadowRadius: 15,
   },
@@ -766,13 +766,13 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 10,
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(119,113,140,0.8)',
     fontWeight: '800',
     letterSpacing: 1,
     marginBottom: 4,
   },
-  statValue: { fontSize: 22, fontWeight: '900', color: '#FFF' },
-  statValueActive: { color: '#FFD580' },
+  statValue: { fontSize: 28, fontWeight: '900', color: '#211A3A' },
+  statValueActive: { color: '#D7FF64' },
 
   goalsSection: {
     marginTop: 4,
@@ -791,8 +791,8 @@ const styles = StyleSheet.create({
   goalsTitle: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#FFF',
-    textTransform: 'lowercase',
+    color: '#211A3A',
+    textTransform: 'none',
   },
   goalsCount: {
     minWidth: 28,
@@ -801,43 +801,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    color: '#FFF',
+    backgroundColor: 'rgba(109,74,255,0.08)',
+    color: '#211A3A',
     fontWeight: '800',
     paddingTop: Platform.OS === 'android' ? 4 : 6,
   },
   seeAllText: {
-    color: '#FFD580',
+    color: '#6D4AFF',
     fontWeight: '800',
     fontSize: 13,
     textTransform: 'lowercase',
   },
 
   emptyState: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(109,74,255,0.12)',
   },
   emptyStateTitle: {
-    color: '#FFF',
+    color: '#211A3A',
     fontSize: 16,
     fontWeight: '900',
     marginBottom: 6,
   },
   emptyStateText: {
-    color: 'rgba(255,255,255,0.75)',
+    color: '#77718C',
     lineHeight: 20,
   },
 
   goalCard: {
-    backgroundColor: '#F4EBDD',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E7D7C1',
+    borderColor: '#E5E0F2',
   },
   goalTopRow: {
     flexDirection: 'row',
@@ -846,14 +846,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   goalCategoryPill: {
-    backgroundColor: '#E9DECF',
+    backgroundColor: '#F0ECFF',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
     alignSelf: 'flex-start',
   },
   goalCategoryText: {
-    color: '#6B5A4A',
+    color: '#77718C',
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'capitalize',
@@ -864,18 +864,18 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8DDD1',
+    backgroundColor: '#FFE4E7',
   },
   goalCardTitle: {
-    color: '#463A31',
-    fontSize: 17,
-    fontWeight: '900',
-    lineHeight: 23,
+    color: '#211A3A',
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 25,
     marginBottom: 8,
     textTransform: 'lowercase',
   },
   goalDeadline: {
-    color: '#7B6B5D',
+    color: '#77718C',
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 12,
@@ -888,25 +888,25 @@ const styles = StyleSheet.create({
   },
   goalProgressTrack: {
     flex: 1,
-    height: 10,
-    backgroundColor: '#E6D7C7',
+    height: 8,
+    backgroundColor: '#E9E5F5',
     borderRadius: 999,
     overflow: 'hidden',
   },
   goalProgressFill: {
     height: '100%',
-    backgroundColor: '#D7A85B',
+    backgroundColor: '#6D4AFF',
     borderRadius: 999,
   },
   goalProgressText: {
-    color: '#6B5A4A',
+    color: '#77718C',
     fontSize: 12,
     fontWeight: '900',
     width: 38,
     textAlign: 'right',
   },
   goalMeta: {
-    color: '#7B6B5D',
+    color: '#77718C',
     fontSize: 13,
     fontWeight: '700',
   },
@@ -922,7 +922,9 @@ const styles = StyleSheet.create({
   mobileNav: {
     height: 70,
     backgroundColor: '#FFFFFF',
-    borderRadius: 25,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E5E0F2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -940,14 +942,14 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
   },
-  navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  navItemVerticalActive: { backgroundColor: 'rgba(109,74,255,0.12)' },
   navLabel: { fontWeight: '700' },
-  navLabelMobile: { fontSize: 10, color: '#6D7856', marginTop: 4 },
-  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
+  navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
+  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.68)' },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(28, 24, 20, 0.45)',
+    backgroundColor: 'rgba(23, 19, 41, 0.58)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -955,17 +957,17 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 380,
-    backgroundColor: '#F4EBDD',
+    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E7D7C1',
+    borderColor: '#E5E0F2',
   },
   modalIconWrap: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#F8DDD1',
+    backgroundColor: '#FFE4E7',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -973,13 +975,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#463A31',
+    color: '#211A3A',
     marginBottom: 10,
   },
   modalText: {
     fontSize: 14,
     lineHeight: 21,
-    color: '#6B5A4A',
+    color: '#77718C',
     marginBottom: 22,
   },
   modalActions: {
@@ -994,10 +996,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalCancelBtn: {
-    backgroundColor: '#E9DECF',
+    backgroundColor: '#F0ECFF',
   },
   modalDeleteBtn: {
-    backgroundColor: '#C96F5D',
+    backgroundColor: '#E65068',
   },
   modalCancelText: {
     color: '#5E4B3D',
@@ -1010,9 +1012,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   guestBanner: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F5F3FF',
     borderWidth: 1.5,
-    borderColor: '#FED7AA',
+    borderColor: '#E5E0F2',
     borderRadius: 20,
     padding: 14,
     marginBottom: 16,
@@ -1030,13 +1032,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   guestBannerText: {
-    color: '#7C2D12',
+    color: '#77718C',
     fontSize: 13,
     fontWeight: '700',
     flex: 1,
   },
   guestBannerButton: {
-    backgroundColor: '#E88C44',
+    backgroundColor: '#6D4AFF',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 14,

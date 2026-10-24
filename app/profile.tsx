@@ -426,7 +426,7 @@ export default function ProfileScreen() {
                     <Text style={styles.cardLabel}>ACTIVE GUIDANCE</Text>
                     <Text style={styles.cardTitle}>{currentBuddy.label} mode</Text>
                   </View>
-                  <Ionicons name="flash" size={32} color="#FFD580" />
+                  <Ionicons name="flash" size={32} color="#D7FF64" />
                 </View>
 
                 <Pressable
@@ -434,7 +434,7 @@ export default function ProfileScreen() {
                   onPress={() => openModal('buddy', 'switch buddy')}
                 >
                   <Text style={styles.secondaryActionText}>switch buddy</Text>
-                  <Ionicons name="swap-horizontal" size={16} color="#5A3D24" />
+                  <Ionicons name="swap-horizontal" size={16} color="#211A3A" />
                 </Pressable>
               </View>
 
@@ -562,7 +562,7 @@ export default function ProfileScreen() {
                       <Ionicons
                         name={buddy === type ? 'radio-button-on' : 'radio-button-off'}
                         size={20}
-                        color={buddy === type ? '#5A3D24' : 'rgba(90,61,36,0.2)'}
+                        color={buddy === type ? '#211A3A' : 'rgba(90,61,36,0.2)'}
                       />
                     )}
                   </Pressable>
@@ -625,7 +625,7 @@ export default function ProfileScreen() {
                 <Ionicons
                   name="color-palette"
                   size={40}
-                  color="#848F73"
+                  color="#6D4AFF"
                   style={{ marginBottom: 10 }}
                 />
                 <Text style={styles.modalSubText}>
@@ -735,7 +735,7 @@ function SettingItem({
     <Pressable style={styles.settingItem} onPress={onPress}>
       <View style={styles.settingLeft}>
         <View style={styles.settingIconBox}>
-          <Ionicons name={icon} size={20} color="#5A3D24" />
+          <Ionicons name={icon} size={20} color="#211A3A" />
         </View>
         <Text style={styles.settingLabel}>{label.toLowerCase()}</Text>
       </View>
@@ -776,18 +776,18 @@ function NavItem({
         color={
           active
             ? isVertical
-              ? '#FFD580'
-              : '#5A3D24'
+              ? '#D7FF64'
+              : '#211A3A'
             : isVertical
               ? 'rgba(255,255,255,0.4)'
-              : '#A4988D'
+              : '#89839D'
         }
       />
       <Text
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' }),
+          active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -797,18 +797,18 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
 
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#828C6A',
+    backgroundColor: '#F5F3FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 280,
-    backgroundColor: '#6D7856',
+    backgroundColor: '#171329',
     padding: 40,
     zIndex: 100,
   },
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#F0ECFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 40,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#6D4AFF',
   },
   onlineBadge: {
     position: 'absolute',
@@ -872,22 +872,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#4CAF50',
     borderWidth: 3,
-    borderColor: '#828C6A',
+    borderColor: '#F5F3FF',
   },
   userName: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#211A3A',
     letterSpacing: -1,
   },
   userEmail: {
     fontSize: 14,
-    color: 'rgba(255,247,239,0.65)',
+    color: '#77718C',
     marginTop: 4,
   },
 
   heroCard: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#211A3A',
     borderRadius: 28,
     padding: 24,
     marginBottom: 30,
@@ -903,18 +903,18 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#FFD580',
+    color: '#D7FF64',
     letterSpacing: 1,
   },
   cardTitle: {
     fontSize: 22,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#F0ECFF',
     marginTop: 4,
     textTransform: 'lowercase',
   },
   secondaryAction: {
-    backgroundColor: '#FFD580',
+    backgroundColor: '#D7FF64',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryActionText: {
-    color: '#5A3D24',
+    color: '#211A3A',
     fontWeight: '900',
     fontSize: 13,
     textTransform: 'lowercase',
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 18,
     fontWeight: '900',
-    color: '#FFF7EF',
+    color: '#211A3A',
     marginBottom: 12,
     textTransform: 'lowercase',
   },
@@ -942,7 +942,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F4EBDD',
+    backgroundColor: '#FFFFFF',
     padding: 18,
     borderRadius: 24,
   },
@@ -955,12 +955,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(90,61,36,0.05)',
+    backgroundColor: 'rgba(109,74,255,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   settingLabel: {
-    color: '#473C34',
+    color: '#211A3A',
     fontWeight: '800',
     fontSize: 16,
   },
@@ -970,7 +970,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   settingValue: {
-    color: '#848F73',
+    color: '#6D4AFF',
     fontWeight: '800',
     fontSize: 14,
   },
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     padding: 18,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,107,107,0.1)',
+    backgroundColor: 'rgba(230,80,104,0.10)',
   },
   signOutText: {
     color: '#FF6B6B',
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
   },
   versionText: {
     textAlign: 'center',
-    color: 'rgba(255,255,255,0.28)',
+    color: '#89839D',
     fontSize: 12,
     marginTop: 40,
     fontWeight: '600',
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
   navLabel: { fontWeight: '700' },
   navLabelMobile: {
     fontSize: 10,
-    color: '#6D7856',
+    color: '#171329',
     marginTop: 4,
   },
   navLabelVertical: {
@@ -1053,7 +1053,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#F7F1E8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 32,
     padding: 30,
     width: '90%',
@@ -1070,27 +1070,27 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#5A3D24',
+    color: '#211A3A',
     marginBottom: 24,
     textTransform: 'lowercase',
   },
   modalSubText: {
     fontSize: 16,
-    color: '#8D8176',
+    color: '#77718C',
     textAlign: 'center',
     marginBottom: 20,
     fontWeight: '600',
   },
   faqContainer: {
     width: '100%',
-    backgroundColor: 'rgba(90,61,36,0.03)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
     padding: 15,
     borderRadius: 20,
     marginBottom: 15,
   },
   faqItem: {
     fontSize: 14,
-    color: '#5A3D24',
+    color: '#211A3A',
     fontWeight: '700',
     marginBottom: 10,
   },
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
   },
   modalOption: {
     width: '100%',
-    backgroundColor: 'rgba(90,61,36,0.03)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
     padding: 20,
     borderRadius: 20,
     flexDirection: 'row',
@@ -1109,8 +1109,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalOptionActive: {
-    backgroundColor: '#FFF7EF',
-    borderColor: '#FFD580',
+    backgroundColor: '#F0ECFF',
+    borderColor: '#D7FF64',
     borderWidth: 1,
   },
   modalOptionText: {
@@ -1120,19 +1120,19 @@ const styles = StyleSheet.create({
     textTransform: 'lowercase',
   },
   modalOptionTextActive: {
-    color: '#5A3D24',
+    color: '#211A3A',
     fontWeight: '900',
   },
   modalConfirmButton: {
     width: '100%',
-    backgroundColor: '#FFD580',
+    backgroundColor: '#D7FF64',
     padding: 18,
     borderRadius: 20,
     alignItems: 'center',
     marginTop: 5,
   },
   modalConfirmText: {
-    color: '#5A3D24',
+    color: '#211A3A',
     fontWeight: '900',
     fontSize: 16,
     textTransform: 'lowercase',
@@ -1142,7 +1142,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   modalCloseText: {
-    color: '#8D8176',
+    color: '#77718C',
     fontWeight: '800',
     textTransform: 'lowercase',
     opacity: 0.6,
