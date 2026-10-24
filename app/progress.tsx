@@ -306,9 +306,9 @@ function NavItem({ label, icon, active, onPress, isVertical }: any) {
       <Ionicons 
         name={active ? icon : (`${icon}-outline` as any)} 
         size={isVertical ? 22 : 24} 
-        color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.48)' : '#89839D')} 
+        color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.4)' : '#89839D')} 
       />
-      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' })]}>
+      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' })]}>
         {label}
       </Text>
     </Pressable>
@@ -320,24 +320,24 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
   loadingContainer: { flex: 1, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#211A3A', fontWeight: '700' },
+  loadingText: { color: '#FFF', fontWeight: '700' },
 
   // UPDATED SIDEBAR
   sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#171329', padding: 40, zIndex: 100 },
-  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#211A3A', marginBottom: 50, letterSpacing: -1 },
+  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 50, letterSpacing: -1 },
   sidebarNav: { gap: 15 },
 
   contentContainer: { alignSelf: 'center' },
   header: { marginBottom: 24 },
-  greeting: { fontSize: 32, fontWeight: '900', color: '#211A3A', letterSpacing: -1 },
-  subtitle: { color: 'rgba(33,26,58,0.68)', fontWeight: '500' },
+  greeting: { fontSize: 32, fontWeight: '900', color: '#FFF', letterSpacing: -1 },
+  subtitle: { color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
   statsHeroRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
   statsHeroColumn: { flexDirection: 'column' },
   fullWidthCard: { width: '100%' },
-  ringCard: { flex: 1, backgroundColor: 'rgba(109,74,255,0.12)', borderRadius: 28, padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
+  ringCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 28, padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 200 },
   glowRing: { width: 140, height: 140, borderRadius: 70, borderWidth: 3, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  ringValue: { fontSize: 38, fontWeight: '900', color: '#211A3A' },
-  ringLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(119,113,140,0.8)', marginTop: 4 },
+  ringValue: { fontSize: 38, fontWeight: '900', color: '#FFF' },
+  ringLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.5)', marginTop: 4 },
   
   verdictCard: { flex: 1.5, backgroundColor: '#FFFFFF', borderRadius: 28, padding: 24, minHeight: 200, position: 'relative', overflow: 'visible', justifyContent: 'center' },
   mascotBadge: { position: 'absolute', top: -30, right: 15, width: 140, height: 140, borderRadius: 70, justifyContent: 'center', alignItems: 'center', elevation: 12 },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 1.0,
     shadowRadius: 15,
     borderWidth: 1.5,
-    borderColor: 'rgba(109,74,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   mascotImg: { width: 95, height: 95 },
   verdictTextContainer: { maxWidth: '65%' },
@@ -386,8 +386,8 @@ const styles = StyleSheet.create({
   mobileNav: { height: 70, backgroundColor: '#FFFFFF', borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 10 },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navItemVertical: { flexDirection: 'row', justifyContent: 'flex-start', padding: 12, borderRadius: 12, gap: 12, width: '100%' },
-  navItemVerticalActive: { backgroundColor: 'rgba(109,74,255,0.12)' },
+  navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   navLabel: { fontWeight: '700' },
   navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
-  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.68)' },
+  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
 });
