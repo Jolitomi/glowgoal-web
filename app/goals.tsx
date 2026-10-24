@@ -202,8 +202,8 @@ export default function GoalsScreen() {
 function NavItem({ label, icon, active, onPress, isVertical }: any) {
   return (
     <Pressable onPress={onPress} style={[styles.navItem, isVertical && styles.navItemVertical, active && isVertical && styles.navItemVerticalActive]}>
-      <Ionicons name={active ? icon : (`${icon}-outline` as any)} size={isVertical ? 22 : 24} color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.48)' : '#89839D')} />
-      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' })]}>{label}</Text>
+      <Ionicons name={active ? icon : (`${icon}-outline` as any)} size={isVertical ? 22 : 24} color={active ? (isVertical ? '#D7FF64' : '#211A3A') : (isVertical ? 'rgba(255,255,255,0.4)' : '#89839D')} />
+      <Text style={[styles.navLabel, isVertical ? styles.navLabelVertical : styles.navLabelMobile, active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' })]}>{label}</Text>
     </Pressable>
   );
 }
@@ -213,24 +213,24 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
   sidebar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 280, backgroundColor: '#171329', padding: 40, zIndex: 100 },
-  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#211A3A', marginBottom: 50, letterSpacing: -1 },
+  sidebarBrand: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 50, letterSpacing: -1 },
   sidebarNav: { gap: 15 },
   mobileNavWrapper: { position: 'absolute', bottom: 30, left: 20, right: 20, zIndex: 9999 },
   mobileNav: { height: 70, backgroundColor: '#FFFFFF', borderRadius: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', shadowOpacity: 0.1, elevation: 10 },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navItemVertical: { flexDirection: 'row', padding: 12, borderRadius: 12, gap: 12, width: '100%' },
-  navItemVerticalActive: { backgroundColor: 'rgba(109,74,255,0.12)' },
+  navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
   navLabel: { fontWeight: '700' },
   navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
-  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.68)' },
+  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
   contentContainer: { width: '100%', maxWidth: 600, alignSelf: 'center' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 150 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
   buddyCircle: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   headerBuddy: { width: 45, height: 45 },
   greetingWrapper: { flex: 1 },
-  greeting: { fontSize: 28, fontWeight: '900', color: '#211A3A', textTransform: 'lowercase' },
-  subtitle: { fontSize: 14, color: 'rgba(33,26,58,0.68)' },
+  greeting: { fontSize: 28, fontWeight: '900', color: '#FFF', textTransform: 'lowercase' },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)' },
   newGoalBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFF', alignItems: 'center', justifyContent: 'center' },
   goalsList: { gap: 16 },
   goalCard: { backgroundColor: '#F9F6F1', borderRadius: 24, padding: 20 },
@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
   progressBarFill: { height: '100%' },
   emptyState: { alignItems: 'center', marginTop: 60 },
   emptyStateBuddy: { width: 140, height: 140, marginBottom: 20 },
-  emptyStateTitle: { fontSize: 22, fontWeight: '900', color: '#211A3A', textTransform: 'lowercase' },
-  emptyStateText: { color: 'rgba(255,255,255,0.68)', marginTop: 8, marginBottom: 30 },
+  emptyStateTitle: { fontSize: 22, fontWeight: '900', color: '#FFF', textTransform: 'lowercase' },
+  emptyStateText: { color: 'rgba(255,255,255,0.6)', marginTop: 8, marginBottom: 30 },
   emptyStateBtn: { paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, borderWidth: 2 },
   emptyStateBtnText: { fontWeight: '800', textTransform: 'lowercase' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
@@ -257,5 +257,5 @@ const styles = StyleSheet.create({
   modalCancel: { flex: 1, padding: 14, alignItems: 'center' },
   modalConfirm: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
   cancelText: { fontWeight: '700', color: '#77718C' },
-  confirmText: { fontWeight: '800', color: '#211A3A' },
+  confirmText: { fontWeight: '800', color: '#FFF' },
 });
