@@ -196,7 +196,7 @@ export default function CreateGoalScreen() {
                     ]}
                   >
                     <View style={styles.mascotGlow} />
-                    <Ionicons name="sparkles" size={54} color="#FFD580" />
+                    <Ionicons name="sparkles" size={54} color="#D7FF64" />
                   </Animated.View>
                 </View>
               </View>
@@ -227,7 +227,7 @@ export default function CreateGoalScreen() {
                         <Ionicons
                           name={cat.icon}
                           size={16}
-                          color={active ? '#5A3D24' : '#5C5248'}
+                          color={active ? '#211A3A' : '#5C5248'}
                         />
                         <Text style={[styles.chipText, active && styles.chipTextActive]}>
                           {cat.label}
@@ -278,7 +278,7 @@ export default function CreateGoalScreen() {
                 ]}
               >
                 <Text style={styles.ctaText}>break this into steps</Text>
-                <Ionicons name="arrow-forward" size={18} color="#5A3D24" />
+                <Ionicons name="arrow-forward" size={18} color="#211A3A" />
               </Pressable>
             </View>
           </ScrollView>
@@ -347,18 +347,18 @@ function NavItem({
         color={
           active
             ? isVertical
-              ? '#FFD580'
-              : '#5A3D24'
+              ? '#D7FF64'
+              : '#211A3A'
             : isVertical
-            ? 'rgba(255,255,255,0.4)'
-            : '#A4988D'
+            ? 'rgba(255,255,255,0.48)'
+            : '#89839D'
         }
       />
       <Text
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#FFF' } : { color: '#5A3D24' }),
+          active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -368,7 +368,7 @@ function NavItem({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#828C6A' },
+  container: { flex: 1, backgroundColor: '#F5F3FF' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
 
@@ -378,14 +378,14 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 280,
-    backgroundColor: '#6D7856',
+    backgroundColor: '#171329',
     padding: 40,
     zIndex: 100,
   },
   sidebarBrand: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#FFF',
+    color: '#211A3A',
     marginBottom: 50,
     letterSpacing: -1,
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
   },
 
   heroCard: {
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     padding: 22,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(109,74,255,0.06)',
     marginBottom: 18,
   },
   heroContent: {
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(109,74,255,0.06)',
     marginBottom: 12,
   },
   buddyBadgeText: {
@@ -538,8 +538,8 @@ const styles = StyleSheet.create({
     borderColor: '#E6DAC8',
   },
   chipActive: {
-    backgroundColor: '#FFD580',
-    borderColor: '#FFD580',
+    backgroundColor: '#D7FF64',
+    borderColor: '#D7FF64',
   },
   chipText: {
     fontSize: 13,
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
     color: '#5C5248',
   },
   chipTextActive: {
-    color: '#5A3D24',
+    color: '#211A3A',
   },
 
   formRow: {
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     height: 62,
     borderRadius: 22,
-    backgroundColor: '#FFD580',
+    backgroundColor: '#D7FF64',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 16,
     fontWeight: '900',
-    color: '#5A3D24',
+    color: '#211A3A',
   },
 
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
@@ -591,10 +591,10 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
   },
-  navItemVerticalActive: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  navItemVerticalActive: { backgroundColor: 'rgba(109,74,255,0.12)' },
   navLabel: { fontWeight: '700' },
-  navLabelMobile: { fontSize: 10, color: '#6D7856', marginTop: 4 },
-  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.6)' },
+  navLabelMobile: { fontSize: 10, color: '#171329', marginTop: 4 },
+  navLabelVertical: { fontSize: 15, color: 'rgba(255,255,255,0.68)' },
 
   mobileNavWrapper: {
     position: 'absolute',
