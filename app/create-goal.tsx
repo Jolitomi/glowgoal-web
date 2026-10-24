@@ -164,7 +164,7 @@ export default function CreateGoalScreen() {
             <View style={styles.contentContainer}>
               <View style={styles.pageHeader}>
                 <Pressable onPress={() => router.push('/goals')} style={styles.backButton}>
-                  <Ionicons name="chevron-back" size={22} color="#F0ECFF" />
+                  <Ionicons name="chevron-back" size={22} color="#211A3A" />
                 </Pressable>
 
                 <View style={styles.pageHeaderTextWrap}>
@@ -422,7 +422,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E0F2',
   },
 
   heroCard: {
