@@ -779,7 +779,7 @@ function NavItem({
               ? '#D7FF64'
               : '#211A3A'
             : isVertical
-              ? 'rgba(255,255,255,0.48)'
+              ? 'rgba(255,255,255,0.4)'
               : '#89839D'
         }
       />
@@ -787,7 +787,7 @@ function NavItem({
         style={[
           styles.navLabel,
           isVertical ? styles.navLabelVertical : styles.navLabelMobile,
-          active && (isVertical ? { color: '#211A3A' } : { color: '#211A3A' }),
+          active && (isVertical ? { color: '#FFF' } : { color: '#211A3A' }),
         ]}
       >
         {label}
@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   sidebarBrand: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#211A3A',
+    color: '#FFF',
     marginBottom: 50,
     letterSpacing: -1,
   },
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(109,74,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -892,7 +892,7 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: 'rgba(109,74,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   buddyInfo: {
     flexDirection: 'row',
@@ -1013,7 +1013,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   navItemVerticalActive: {
-    backgroundColor: 'rgba(109,74,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   navLabel: { fontWeight: '700' },
   navLabelMobile: {
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
   },
   navLabelVertical: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.68)',
+    color: 'rgba(255,255,255,0.6)',
   },
 
   mobileNavWrapper: {
