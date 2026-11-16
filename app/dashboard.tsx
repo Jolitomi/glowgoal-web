@@ -101,6 +101,16 @@ export default function DashboardScreen() {
   }, [currentUser]);
 
   const previewGoals = useMemo(() => goals.slice(0, 2), [goals]);
+  // Prioritize the first unfinished task from an active goal.
+  const todaysFocus = useMemo(() => {
+    for (const goal of goals) {
+      if (goal.progress >= 100) continue;
+      const task = goal.tasks?.find((item) => !item.completed);
+      if (task) return { goal, task };
+    }
+    return null;
+  }, [goals]);
+
 
   // Subscribe to guest-to-cloud sync status
   useEffect(() => {
@@ -462,6 +472,58 @@ export default function DashboardScreen() {
                 </View>
               )}
 
+              {/* Daily focus: one actionable step instead of another generic reminder. */}
+              <View style={styles.focusCard}>
+                <View style={styles.focusHeading}>
+                  <Ionicons name="sunny-outline" size={19} color="#E9BD70" />
+                  <Text style={styles.focusEyebrow}>TODAY'S FOCUS</Text>
+                </View>
+                {todaysFocus ? (
+                  <>
+                    <Text style={styles.focusTitle}>{todaysFocus.task.title}</Text>
+                    <Text style={styles.focusSubtitle} numberOfLines={2}>
+                      From: {todaysFocus.goal.title}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open task: ${todaysFocus.task.title}`}
+                      style={styles.focusAction}
+                      onPress={() => router.push({
+                        pathname: '/goal-details',
+                        params: { goalId: todaysFocus.goal.id },
+                      })}
+                    >
+                      <Text style={styles.focusActionText}>Work on this step</Text>
+                      <Ionicons name="arrow-forward" size={18} color="#513B29" />
+                    </Pressable>
+                    <Text style={styles.focusHint}>
+                      One small action counts. Open the goal to mark it complete.
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.focusTitle}>
+                      {goals.length ? 'You’re all caught up ✨' : 'Start with one small goal ✨'}
+                    </Text>
+                    <Text style={styles.focusSubtitle}>
+                      {goals.length
+                        ? 'No unfinished steps right now. Enjoy your progress!'
+                        : 'Create a goal and GlowGoal will help you take the first step.'}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.focusAction}
+                      onPress={() => router.push(goals.length ? '/goals' : '/create-goal')}
+                    >
+                      <Text style={styles.focusActionText}>
+                        {goals.length ? 'View my goals' : 'Create my first goal'}
+                      </Text>
+                      <Ionicons name="arrow-forward" size={18} color="#513B29" />
+                    </Pressable>
+                  </>
+                )}
+              </View>
+
               <View style={styles.heroCard}>
                 <View
                   style={[
@@ -788,6 +850,30 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#828C6A' },
   safeArea: { flex: 1 },
   mainWrapper: { flex: 1 },
+
+  focusCard: {
+    backgroundColor: '#FFF9EE',
+    borderRadius: 22,
+    padding: 22,
+    marginBottom: 22,
+    borderWidth: 1,
+    borderColor: '#F3E5CC',
+  },
+  focusHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  focusEyebrow: { fontSize: 12, fontWeight: '800', color: '#85613B', letterSpacing: 1.2 },
+  focusTitle: { fontSize: 23, fontWeight: '800', color: '#463627', marginBottom: 8 },
+  focusSubtitle: { fontSize: 14, color: '#786D60', lineHeight: 21, marginBottom: 18 },
+  focusAction: {
+    backgroundColor: '#E9BD70',
+    borderRadius: 13,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  focusActionText: { fontSize: 15, fontWeight: '800', color: '#513B29' },
+  focusHint: { marginTop: 12, fontSize: 12, color: '#786D60', lineHeight: 18 },
 
   sidebar: {
     position: 'absolute',
