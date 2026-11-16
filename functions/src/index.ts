@@ -52,14 +52,13 @@ export const sendAfternoonEmails = onSchedule(
         .collection('goals')
         .get();
 
-      const goals = goalsSnap.docs.map((doc) => doc.data());
-
-      const unfinished = goals.filter((g) => g.progress < 100);
+      const unfinished = goalsSnap.docs.filter((doc) => doc.data().progress < 100);
 
       if (!unfinished.length) continue;
 
-      const goal = unfinished[0];
-      const goalId = goalsSnap.docs.find((doc) => doc.data().title === goal.title && doc.data().progress === goal.progress)?.id ?? '';
+      const goalDoc = unfinished[0];
+      const goal = goalDoc.data();
+      const goalId = goalDoc.id;
       const goalUrl = `https://www.glowgoal.com.ng/goal-details?id=${encodeURIComponent(goalId)}`;
 
       // ✉️ send email
