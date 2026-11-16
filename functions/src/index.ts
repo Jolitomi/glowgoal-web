@@ -9,6 +9,12 @@ initializeApp();
 const db = getFirestore();
 const resend = new Resend(functions.config().resend.key);
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[character] ?? character));
+}
+
 export const sendAfternoonEmails = onSchedule(
   {
     schedule: 'every day 16:10',
@@ -53,6 +59,8 @@ export const sendAfternoonEmails = onSchedule(
       if (!unfinished.length) continue;
 
       const goal = unfinished[0];
+      const goalId = goalsSnap.docs.find((doc) => doc.data().title === goal.title && doc.data().progress === goal.progress)?.id ?? '';
+      const goalUrl = `https://www.glowgoal.com.ng/goal-details?id=${encodeURIComponent(goalId)}`;
 
       // ✉️ send email
       await resend.emails.send({
@@ -63,8 +71,10 @@ export const sendAfternoonEmails = onSchedule(
           <div style="font-family:sans-serif;">
             <h2>GlowGoal check-in</h2>
             <p>You said this matters.</p>
-            <p><strong>${goal.title}</strong> is still waiting for you.</p>
-            <p>Open the app and take one step.</p>
+            <p><strong>${escapeHtml(String(goal.title ?? 'Your goal'))}</strong> is still waiting for you.</p>
+            <p>Take one small step toward your goal today.</p>
+            <p><a href="${goalUrl}" style="display:inline-block;padding:12px 20px;background:#6D4BC3;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;">Continue your goal in GlowGoal</a></p>
+            <p><a href="${goalUrl}">${goalUrl}</a></p>
           </div>
         `,
       });
