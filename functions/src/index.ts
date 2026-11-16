@@ -59,7 +59,7 @@ export const sendAfternoonEmails = onSchedule(
       const goalDoc = unfinished[0];
       const goal = goalDoc.data();
       const goalId = goalDoc.id;
-      const goalUrl = `https://www.glowgoal.com.ng/goal-details?id=${encodeURIComponent(goalId)}`;
+      const goalUrl = `https://www.glowgoal.com.ng/goal-details?goalId=${encodeURIComponent(goalId)}`;
 
       // ✉️ send email
       await resend.emails.send({
