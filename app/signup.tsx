@@ -28,7 +28,6 @@ import {
   View,
   useWindowDimensions
 } from 'react-native';
-import { scheduleDailyReminders } from '../lib/daily-reminder-engine';
 import { auth } from '../lib/firebase';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 
@@ -46,6 +45,11 @@ export default function SignUpScreen() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const anyLoading = emailLoading || googleLoading;
+  const [authError, setAuthError] = useState('');
+  const showAuthError = (message: string) => {
+    setAuthError(message);
+    if (Platform.OS !== 'web') Alert.alert('Sign in issue', message);
+  };
 
   const float = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0.9)).current;
@@ -71,7 +75,8 @@ export default function SignUpScreen() {
   const finalizeSignUp = async (user: any) => {
     try {
       // 1. Email + reminder setup
-      await scheduleDailyReminders(user.uid, 'hype');
+      // Do not block sign-up on local reminder setup; the dashboard schedules reminders after goals load.
+      // scheduleDailyReminders expects GoalItem[], not a Firebase user ID.
 
       // 2. Push registration
       let token = null;
@@ -143,6 +148,7 @@ export default function SignUpScreen() {
   };
 
   const handleGoogleSignIn = async () => {
+    setAuthError('');
     setGoogleLoading(true);
 
     try {
@@ -164,7 +170,7 @@ export default function SignUpScreen() {
       const message =
         error instanceof Error ? error.message : 'Google sign-in failed';
 
-      Alert.alert('Login Error', message);
+      showAuthError(message.includes('auth/unauthorized-domain') ? 'This preview domain is not authorized in Firebase Authentication. Add the preview hostname under Authentication → Settings → Authorized domains.' : message);
       setGoogleLoading(false);
     }
   };
@@ -251,7 +257,7 @@ export default function SignUpScreen() {
         const message =
           err instanceof Error ? err.message : 'Google sign-in failed';
 
-        Alert.alert('Firebase Error', message);
+        showAuthError(message);
         setGoogleLoading(false);
       }
     };
@@ -261,10 +267,11 @@ export default function SignUpScreen() {
 
   const handleEmailSignUp = async () => {
     if (!name || !email || password.length < 6) {
-      Alert.alert('Hold up!', 'I need a name, valid email, and 6+ chars for password.');
+      showAuthError('Enter your name, email, and a password with at least 6 characters.');
       return;
     }
     try {
+      setAuthError('');
       setEmailLoading(true);
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password);
       if (result.user) {
@@ -272,7 +279,7 @@ export default function SignUpScreen() {
         await finalizeSignUp(result.user);
       }
     } catch (error: any) {
-      Alert.alert('Sign up failed', error.message);
+      showAuthError(error?.code === 'auth/email-already-in-use' ? 'This email already has an account. Tap Log in below instead.' : (error?.message ?? 'Sign up failed. Please try again.'));
       setEmailLoading(false);
     }
   };
@@ -316,6 +323,7 @@ export default function SignUpScreen() {
                 </Pressable>
               </View>
 
+              {!!authError && <Text accessibilityRole="alert" style={styles.authError}>{authError}</Text>}
               <View style={styles.socialSection}>
                 <Pressable style={styles.socialButton} onPress={handleGoogleSignIn} disabled={anyLoading}>
                   {googleLoading ? <ActivityIndicator color="#2F2A26" /> : <Text style={styles.socialText}>Continue with Google</Text>}
@@ -338,6 +346,7 @@ export default function SignUpScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  authError: { color: '#7F1D1D', backgroundColor: '#FFF1F2', padding: 12, borderRadius: 10, marginBottom: 14, width: '100%', fontSize: 13 },
   safeArea: { flex: 1 },
   flex: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
